@@ -1,0 +1,6 @@
+
+{
+  "name": "FreeTool - AI 代码高亮",
+  "description": "一个由 AI 驱动的工具，可自动高亮代码片段。粘贴您的代码，选择语言，即可获得格式精美的 HTML，其中包含用于语法高亮的 Tailwind CSS 类，可直接在您的项目中使用。",
+  "requestFramePermissions": []
+}
