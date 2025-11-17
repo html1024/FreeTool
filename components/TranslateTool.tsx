@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { translateText } from '../services/translateService';
 
 type Language = 'auto' | 'zh' | 'en' | 'ja' | 'ko' | 'fr' | 'de' | 'es';
@@ -32,26 +32,54 @@ const TranslateTool: React.FC = () => {
     const [showSourceDropdown, setShowSourceDropdown] = useState<boolean>(false);
     const [showTargetDropdown, setShowTargetDropdown] = useState<boolean>(false);
 
-    const handleTranslate = useCallback(async () => {
-        if (!inputText.trim()) {
-            setError("请输入需要翻译的文本。");
+    const translateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // 自动翻译函数
+    const performTranslate = useCallback(async (text: string, source: Language, target: Language) => {
+        if (!text.trim()) {
+            setTranslatedText('');
+            setDetectedLangName('');
             return;
         }
+
         setIsLoading(true);
         setError(null);
-        setTranslatedText('');
 
         try {
-            const result = await translateText(inputText, sourceLang, targetLang);
+            const result = await translateText(text, source, target);
             setTranslatedText(result.translatedText);
             setDetectedLangName(result.detectedLang);
         } catch (err) {
             console.error(err);
             setError(err instanceof Error ? err.message : "翻译失败,请稍后重试。");
+            setTranslatedText('');
         } finally {
             setIsLoading(false);
         }
-    }, [inputText, sourceLang, targetLang]);
+    }, []);
+
+    // 输入文本变化时,延迟翻译
+    useEffect(() => {
+        if (translateTimeoutRef.current) {
+            clearTimeout(translateTimeoutRef.current);
+        }
+
+        if (inputText.trim()) {
+            translateTimeoutRef.current = setTimeout(() => {
+                performTranslate(inputText, sourceLang, targetLang);
+            }, 500); // 500ms 防抖
+        } else {
+            setTranslatedText('');
+            setDetectedLangName('');
+            setError(null);
+        }
+
+        return () => {
+            if (translateTimeoutRef.current) {
+                clearTimeout(translateTimeoutRef.current);
+            }
+        };
+    }, [inputText, sourceLang, targetLang, performTranslate]);
 
     const handleCopy = useCallback(() => {
         if (!translatedText) return;
@@ -69,24 +97,53 @@ const TranslateTool: React.FC = () => {
             return;
         }
 
-        setInputText(translatedText);
-        setTranslatedText('');
+        if (!translatedText) {
+            alert('请先翻译文本后再互换');
+            return;
+        }
 
-        const temp = sourceLang;
-        setSourceLang(targetLang);
-        setTargetLang(temp);
+        // 互换文本和语言
+        const newInputText = translatedText;
+        const newSourceLang = targetLang;
+        const newTargetLang = sourceLang;
+
+        setInputText(newInputText);
+        setSourceLang(newSourceLang);
+        setTargetLang(newTargetLang);
+        setTranslatedText('');
         setDetectedLangName('');
     }, [translatedText, sourceLang, targetLang]);
 
     const handleClear = useCallback(() => {
         setInputText('');
+        setTranslatedText('');
+        setDetectedLangName('');
+        setError(null);
     }, []);
+
+    const handleSourceLangChange = useCallback((newLang: Language) => {
+        setSourceLang(newLang);
+        setShowSourceDropdown(false);
+        // 语言改变后重新翻译
+        if (inputText.trim()) {
+            performTranslate(inputText, newLang, targetLang);
+        }
+    }, [inputText, targetLang, performTranslate]);
+
+    const handleTargetLangChange = useCallback((newLang: Language) => {
+        setTargetLang(newLang);
+        setShowTargetDropdown(false);
+        // 语言改变后重新翻译
+        if (inputText.trim()) {
+            performTranslate(inputText, sourceLang, newLang);
+        }
+    }, [inputText, sourceLang, performTranslate]);
 
     const getSourceLangDisplay = () => {
         if (detectedLangName && sourceLang === 'auto') {
             return detectedLangName;
         }
-        return LANGUAGES.find(l => l.code === sourceLang)?.name || '自动检���';
+        return LANGUAGES.find(l => l.code === sourceLang)?.name || '自动检测';
     };
 
     const getTargetLangDisplay = () => {
@@ -126,10 +183,7 @@ const TranslateTool: React.FC = () => {
                                     {LANGUAGES.map(lang => (
                                         <button
                                             key={lang.code}
-                                            onClick={() => {
-                                                setSourceLang(lang.code);
-                                                setShowSourceDropdown(false);
-                                            }}
+                                            onClick={() => handleSourceLangChange(lang.code)}
                                             className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
                                                 sourceLang === lang.code ? 'bg-primary/10 text-primary' : 'text-gray-700 dark:text-gray-300'
                                             }`}
@@ -146,6 +200,7 @@ const TranslateTool: React.FC = () => {
                             onClick={handleSwap}
                             disabled={!translatedText || sourceLang === 'auto'}
                             className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={sourceLang === 'auto' ? '自动检测模式无法互换' : '互换语言'}
                         >
                             <span className="material-symbols-outlined text-xl">swap_horiz</span>
                         </button>
@@ -167,10 +222,7 @@ const TranslateTool: React.FC = () => {
                                     {TARGET_LANGUAGES.map(lang => (
                                         <button
                                             key={lang.code}
-                                            onClick={() => {
-                                                setTargetLang(lang.code);
-                                                setShowTargetDropdown(false);
-                                            }}
+                                            onClick={() => handleTargetLangChange(lang.code)}
                                             className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
                                                 targetLang === lang.code ? 'bg-primary/10 text-primary' : 'text-gray-700 dark:text-gray-300'
                                             }`}
@@ -194,10 +246,14 @@ const TranslateTool: React.FC = () => {
                             rows={8}
                         ></textarea>
                         <div className="flex items-center justify-between pt-2">
-                            <p className="text-xs text-gray-400 dark:text-gray-500">{inputText.length} / 5000</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500">
+                                {inputText.length} / 5000
+                                {isLoading && <span className="ml-2">翻译中...</span>}
+                            </p>
                             <button
                                 onClick={handleClear}
-                                className="rounded-full p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50"
+                                disabled={!inputText}
+                                className="rounded-full p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <span className="material-symbols-outlined text-base">close</span>
                             </button>
@@ -220,28 +276,6 @@ const TranslateTool: React.FC = () => {
                     </div>
                 </div>
             </div>
-
-            <div className="mt-6">
-                <button
-                    onClick={handleTranslate}
-                    disabled={isLoading || !inputText.trim()}
-                    className="flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    {isLoading ? (
-                        <>
-                            <div className="spinner"></div>
-                            <span>翻译中...</span>
-                        </>
-                    ) : (
-                        <>
-                            <span>翻译</span>
-                            <span className="material-symbols-outlined text-xl">arrow_forward</span>
-                        </>
-                    )}
-                </button>
-            </div>
-
-            <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">由 Google 翻译 API 驱动</p>
         </div>
     );
 };
