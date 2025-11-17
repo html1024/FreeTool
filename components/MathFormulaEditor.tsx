@@ -151,7 +151,7 @@ const SYMBOL_CATEGORIES = {
         { symbol: '3×3', latex: '\\begin{pmatrix} a & b & c \\\\ d & e & f \\\\ g & h & i \\end{pmatrix}' },
         { symbol: '[2×2]', latex: '\\begin{bmatrix} a & b \\\\ c & d \\end{bmatrix}' },
         { symbol: '[3×3]', latex: '\\begin{bmatrix} a & b & c \\\\ d & e & f \\\\ g & h & i \\end{bmatrix}' },
-        { symbol: '|2×2|', latex: '\\begin{vmatrix} a & b \\\\ c & d \\end{vmatrix}' },
+        { symbol: '|2��2|', latex: '\\begin{vmatrix} a & b \\\\ c & d \\end{vmatrix}' },
         { symbol: 'cases', latex: '\\begin{cases} x & x > 0 \\\\ -x & x \\leq 0 \\end{cases}' },
     ],
     '文本': [
@@ -167,66 +167,18 @@ const SYMBOL_CATEGORIES = {
 
 // 常用公式模板
 const FORMULA_TEMPLATES = [
-    {
-        name: '二次公式',
-        latex: 'x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}',
-        category: '代数'
-    },
-    {
-        name: '勾股定理',
-        latex: 'a^2 + b^2 = c^2',
-        category: '几何'
-    },
-    {
-        name: '欧拉公式',
-        latex: 'e^{i\\pi} + 1 = 0',
-        category: '数学'
-    },
-    {
-        name: '导数定义',
-        latex: 'f\'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}',
-        category: '微积分'
-    },
-    {
-        name: '泰勒展开',
-        latex: 'f(x) = \\sum_{n=0}^{\\infty} \\frac{f^{(n)}(a)}{n!}(x-a)^n',
-        category: '微积分'
-    },
-    {
-        name: '正态分布',
-        latex: 'f(x) = \\frac{1}{\\sigma\\sqrt{2\\pi}} e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}',
-        category: '统计'
-    },
-    {
-        name: '麦克斯韦方程',
-        latex: '\\nabla \\cdot \\vec{E} = \\frac{\\rho}{\\epsilon_0}',
-        category: '物理'
-    },
-    {
-        name: '薛定谔方程',
-        latex: 'i\\hbar\\frac{\\partial}{\\partial t}\\Psi = \\hat{H}\\Psi',
-        category: '物理'
-    },
-    {
-        name: '矩阵乘法',
-        latex: '\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix} \\begin{pmatrix} e & f \\\\ g & h \\end{pmatrix} = \\begin{pmatrix} ae+bg & af+bh \\\\ ce+dg & cf+dh \\end{pmatrix}',
-        category: '线性代数'
-    },
-    {
-        name: '行列式',
-        latex: '\\begin{vmatrix} a & b \\\\ c & d \\end{vmatrix} = ad - bc',
-        category: '线性代数'
-    },
-    {
-        name: '分部积分',
-        latex: '\\int u \\, dv = uv - \\int v \\, du',
-        category: '微积分'
-    },
-    {
-        name: '柯西不等式',
-        latex: '\\left(\\sum_{i=1}^n a_i b_i\\right)^2 \\leq \\left(\\sum_{i=1}^n a_i^2\\right) \\left(\\sum_{i=1}^n b_i^2\\right)',
-        category: '代数'
-    },
+    { name: '二次公式', latex: 'x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}', category: '代数' },
+    { name: '勾股定理', latex: 'a^2 + b^2 = c^2', category: '几何' },
+    { name: '欧拉公式', latex: 'e^{i\\pi} + 1 = 0', category: '数学' },
+    { name: '导数定义', latex: 'f\'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}', category: '微积分' },
+    { name: '泰勒展开', latex: 'f(x) = \\sum_{n=0}^{\\infty} \\frac{f^{(n)}(a)}{n!}(x-a)^n', category: '微积分' },
+    { name: '正态分布', latex: 'f(x) = \\frac{1}{\\sigma\\sqrt{2\\pi}} e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}', category: '统计' },
+    { name: '麦克斯韦方程', latex: '\\nabla \\cdot \\vec{E} = \\frac{\\rho}{\\epsilon_0}', category: '物理' },
+    { name: '薛定谔方程', latex: 'i\\hbar\\frac{\\partial}{\\partial t}\\Psi = \\hat{H}\\Psi', category: '物理' },
+    { name: '矩阵乘法', latex: '\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix} \\begin{pmatrix} e & f \\\\ g & h \\end{pmatrix} = \\begin{pmatrix} ae+bg & af+bh \\\\ ce+dg & cf+dh \\end{pmatrix}', category: '线性代数' },
+    { name: '行列式', latex: '\\begin{vmatrix} a & b \\\\ c & d \\end{vmatrix} = ad - bc', category: '线性代数' },
+    { name: '分部积分', latex: '\\int u \\, dv = uv - \\int v \\, du', category: '微积分' },
+    { name: '柯西不等式', latex: '\\left(\\sum_{i=1}^n a_i b_i\\right)^2 \\leq \\left(\\sum_{i=1}^n a_i^2\\right) \\left(\\sum_{i=1}^n b_i^2\\right)', category: '代数' },
 ];
 
 const MathFormulaEditor: React.FC = () => {
@@ -238,13 +190,12 @@ const MathFormulaEditor: React.FC = () => {
     const [copyMathmlSuccess, setCopyMathmlSuccess] = useState<boolean>(false);
     const [isNotificationFadingOut, setIsNotificationFadingOut] = useState<boolean>(false);
     const [notificationMessage, setNotificationMessage] = useState<string>('');
+    const [activeTab, setActiveTab] = useState<'symbols' | 'templates'>('symbols');
     const [activeCategory, setActiveCategory] = useState<string>('基本运算');
-    const [showTemplates, setShowTemplates] = useState<boolean>(false);
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const renderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // 自动渲染公式
     const performRender = useCallback((latex: string) => {
         if (!latex.trim()) {
             setRenderedHtml('');
@@ -259,8 +210,6 @@ const MathFormulaEditor: React.FC = () => {
         }
 
         try {
-            // 处理公式,使 KaTeX 支持中文
-            // 使用 strict: false 允许更多的 LaTeX 语法
             const html = window.katex.renderToString(latex, {
                 throwOnError: false,
                 displayMode: true,
@@ -374,36 +323,82 @@ const MathFormulaEditor: React.FC = () => {
             )}
 
             <div className="w-full max-w-7xl">
-                {/* 工具栏 */}
-                <div className="bg-white dark:bg-gray-800 rounded-t-xl border border-gray-200 dark:border-gray-700 p-3 flex flex-wrap items-center gap-2">
-                    <button onClick={handleClear} className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                {/* 符号/模板切换标签 */}
+                <div className="bg-white dark:bg-gray-800 rounded-t-xl border border-gray-200 dark:border-gray-700 flex items-center">
+                    <button
+                        onClick={() => setActiveTab('symbols')}
+                        className={`px-6 py-3 text-sm font-medium transition-colors ${
+                            activeTab === 'symbols'
+                                ? 'bg-primary text-white rounded-tl-xl'
+                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                    >
+                        快捷符号
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('templates')}
+                        className={`px-6 py-3 text-sm font-medium transition-colors ${
+                            activeTab === 'templates'
+                                ? 'bg-primary text-white'
+                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                    >
+                        公式模板
+                    </button>
+                    <button
+                        onClick={handleClear}
+                        className="ml-auto mr-3 flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    >
                         <span className="material-symbols-outlined text-base">delete</span>清空
-                    </button>
-                    <button onClick={handleCopyLatex} disabled={!latexInput} className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded text-sm hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                        <span className="material-symbols-outlined text-base">content_copy</span>复制 LaTeX
-                    </button>
-                    <button onClick={handleCopyMathML} disabled={!mathmlOutput} className="flex items-center gap-1 px-3 py-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded text-sm hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                        <span className="material-symbols-outlined text-base">content_copy</span>复制 MathML
-                    </button>
-                    <button onClick={() => setShowTemplates(!showTemplates)} className="flex items-center gap-1 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded text-sm hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors ml-auto">
-                        <span className="material-symbols-outlined text-base">lightbulb</span>{showTemplates ? '隐藏模板' : '公式模板'}
                     </button>
                 </div>
 
+                {/* 符号面板 */}
+                {activeTab === 'symbols' && (
+                    <div className="bg-white dark:bg-gray-800 border-x border-gray-200 dark:border-gray-700">
+                        <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 scrollbar-thin">
+                            {Object.keys(SYMBOL_CATEGORIES).map((category) => (
+                                <button
+                                    key={category}
+                                    onClick={() => setActiveCategory(category)}
+                                    className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+                                        activeCategory === category
+                                            ? 'bg-blue-50 dark:bg-blue-900/30 text-primary border-b-2 border-primary'
+                                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                    }`}
+                                >
+                                    {category}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="p-4 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-2">
+                            {SYMBOL_CATEGORIES[activeCategory as keyof typeof SYMBOL_CATEGORIES].map((item, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => insertSymbol(item.latex)}
+                                    className="h-10 flex items-center justify-center bg-gray-50 dark:bg-gray-700 hover:bg-primary/10 dark:hover:bg-primary/20 border border-gray-200 dark:border-gray-600 rounded text-lg transition-colors"
+                                    title={item.latex}
+                                >
+                                    {item.symbol}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* 公式模板 */}
-                {showTemplates && (
-                    <div className="bg-amber-50 dark:bg-amber-900/20 border-x border-gray-200 dark:border-gray-700 p-4">
-                        <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">常用公式模板</h4>
+                {activeTab === 'templates' && (
+                    <div className="bg-white dark:bg-gray-800 border-x border-gray-200 dark:border-gray-700 p-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                             {FORMULA_TEMPLATES.map((template, index) => (
                                 <button
                                     key={index}
                                     onClick={() => setLatexInput(template.latex)}
-                                    className="text-left p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded hover:border-primary dark:hover:border-primary transition-colors"
+                                    className="text-left p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded hover:border-primary dark:hover:border-primary transition-colors"
                                 >
                                     <div className="flex items-center justify-between mb-1">
                                         <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">{template.name}</span>
-                                        <span className="text-xs text-gray-500 dark:text-gray-400">{template.category}</span>
+                                        <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded">{template.category}</span>
                                     </div>
                                     <code className="text-xs text-gray-600 dark:text-gray-400 block truncate">{template.latex}</code>
                                 </button>
@@ -413,13 +408,19 @@ const MathFormulaEditor: React.FC = () => {
                 )}
 
                 {/* 主编辑区域 */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 border-x border-gray-200 dark:border-gray-700">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 border border-gray-200 dark:border-gray-700">
                     <div className="bg-white dark:bg-gray-800 p-4 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between mb-2">
                             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">LaTeX 代码</h3>
                             <span className="text-xs text-gray-400">{latexInput.length} 字符</span>
                         </div>
-                        <textarea ref={textareaRef} value={latexInput} onChange={(e) => setLatexInput(e.target.value)} className="w-full h-64 resize-none rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/50 p-3 text-sm font-mono" placeholder="在此输入 LaTeX 代码..."></textarea>
+                        <textarea
+                            ref={textareaRef}
+                            value={latexInput}
+                            onChange={(e) => setLatexInput(e.target.value)}
+                            className="w-full h-64 resize-none rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/50 p-3 text-sm font-mono"
+                            placeholder="在此输入 LaTeX 代码..."
+                        ></textarea>
                     </div>
 
                     <div className="bg-gray-50 dark:bg-gray-900/50 p-4">
@@ -445,23 +446,24 @@ const MathFormulaEditor: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 符号面板 */}
-                <div className="bg-white dark:bg-gray-800 border border-t-0 border-gray-200 dark:border-gray-700 rounded-b-xl">
-                    <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 scrollbar-thin">
-                        {Object.keys(SYMBOL_CATEGORIES).map((category) => (
-                            <button key={category} onClick={() => setActiveCategory(category)} className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${activeCategory === category ? 'bg-primary text-white border-b-2 border-primary' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
-                                {category}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="p-4 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-2">
-                        {SYMBOL_CATEGORIES[activeCategory as keyof typeof SYMBOL_CATEGORIES].map((item, index) => (
-                            <button key={index} onClick={() => insertSymbol(item.latex)} className="h-10 flex items-center justify-center bg-gray-50 dark:bg-gray-700 hover:bg-primary/10 dark:hover:bg-primary/20 border border-gray-200 dark:border-gray-600 rounded text-lg transition-colors" title={item.latex}>
-                                {item.symbol}
-                            </button>
-                        ))}
-                    </div>
+                {/* 复制按钮区域 */}
+                <div className="bg-white dark:bg-gray-800 rounded-b-xl border-x border-b border-gray-200 dark:border-gray-700 p-3 flex flex-wrap items-center gap-2">
+                    <button
+                        onClick={handleCopyLatex}
+                        disabled={!latexInput}
+                        className="flex items-center gap-1 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <span className="material-symbols-outlined text-base">content_copy</span>
+                        复制 LaTeX 代码
+                    </button>
+                    <button
+                        onClick={handleCopyMathML}
+                        disabled={!mathmlOutput}
+                        className="flex items-center gap-1 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded text-sm font-medium hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <span className="material-symbols-outlined text-base">content_copy</span>
+                        复制 MathML 格式
+                    </button>
                 </div>
             </div>
         </div>
