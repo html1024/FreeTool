@@ -58,8 +58,28 @@ const CodeHighlightTool: React.FC = () => {
 <html>
 <head>
 <style>
-    body { font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 11pt; line-height: 1.5; }
-    pre { background-color: #f5f5f5; padding: 16px; border-radius: 4px; border: 1px solid #ddd; }
+    body {
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 10pt;
+        line-height: 1.4;
+        margin: 0;
+        padding: 0;
+    }
+    pre {
+        background-color: #f5f5f5;
+        padding: 12px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        margin: 0;
+        max-width: 100%;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    code {
+        font-size: 9pt;
+        display: block;
+    }
     /* Highlight.js GitHub theme colors */
     .hljs-keyword { color: #d73a49; font-weight: bold; }
     .hljs-string { color: #032f62; }
@@ -75,6 +95,10 @@ const CodeHighlightTool: React.FC = () => {
     .hljs-tag { color: #22863a; }
     .hljs-name { color: #22863a; font-weight: bold; }
     .hljs-attribute { color: #6f42c1; }
+
+    @page {
+        margin: 2cm;
+    }
 </style>
 </head>
 <body>
@@ -153,7 +177,7 @@ const CodeHighlightTool: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2">
                     {/* 左侧：原始代码 */}
                     <div className="relative flex flex-col p-4 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-700/50">
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center justify-between mb-3 min-h-[36px]">
                             <h3 className="text-gray-900 dark:text-white text-base font-semibold leading-normal flex items-center gap-2">
                                 <span className="material-symbols-outlined text-xl">code</span>
                                 原始代码
@@ -170,7 +194,7 @@ const CodeHighlightTool: React.FC = () => {
 
                     {/* 右侧：高亮后的代码 */}
                     <div className="relative flex flex-col p-4 bg-gray-50/50 dark:bg-gray-800/30">
-                        <div className="flex justify-between items-center mb-3">
+                        <div className="flex justify-between items-start mb-3 min-h-[36px]">
                             <h3 className="text-gray-900 dark:text-white text-base font-semibold leading-normal flex items-center gap-2">
                                 <span className="material-symbols-outlined text-xl">auto_awesome</span>
                                 高亮后的代码
@@ -179,7 +203,7 @@ const CodeHighlightTool: React.FC = () => {
                                 <button
                                     onClick={handleCopyAsText}
                                     disabled={!highlightedCode}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
                                 >
                                     <span className="material-symbols-outlined text-base">content_copy</span>
                                     <span>{copySuccess ? "已复制!" : "复制文本"}</span>
@@ -187,7 +211,7 @@ const CodeHighlightTool: React.FC = () => {
                                 <button
                                     onClick={handleCopyAsHTML}
                                     disabled={!highlightedCode}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-medium hover:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-medium hover:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
                                 >
                                     <span className="material-symbols-outlined text-base">description</span>
                                     <span>复制到Word</span>
