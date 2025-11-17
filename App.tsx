@@ -34,7 +34,7 @@ const TOOLS: Tool[] = [
     },
     {
         id: 'image-converter',
-        name: '图片格���转换',
+        name: '图片格式转换',
         icon: 'image',
         component: ImageConverterTool,
     },
