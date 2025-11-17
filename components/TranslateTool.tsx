@@ -31,6 +31,8 @@ const TranslateTool: React.FC = () => {
     const [detectedLangName, setDetectedLangName] = useState<string>('');
     const [showSourceDropdown, setShowSourceDropdown] = useState<boolean>(false);
     const [showTargetDropdown, setShowTargetDropdown] = useState<boolean>(false);
+    const [copySuccess, setCopySuccess] = useState<boolean>(false);
+    const [isNotificationFadingOut, setIsNotificationFadingOut] = useState<boolean>(false);
 
     const translateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -84,7 +86,17 @@ const TranslateTool: React.FC = () => {
     const handleCopy = useCallback(() => {
         if (!translatedText) return;
         navigator.clipboard.writeText(translatedText).then(() => {
-            alert('已复制到剪贴板!');
+            setCopySuccess(true);
+            setIsNotificationFadingOut(false);
+            // 1.7秒后开始淡出动画
+            setTimeout(() => {
+                setIsNotificationFadingOut(true);
+            }, 1700);
+            // 2秒后完全隐藏
+            setTimeout(() => {
+                setCopySuccess(false);
+                setIsNotificationFadingOut(false);
+            }, 2000);
         }).catch(err => {
             console.error('Failed to copy text: ', err);
             setError("复制文本失败。");
@@ -135,6 +147,16 @@ const TranslateTool: React.FC = () => {
             {error && (
                 <div className="w-full max-w-5xl mb-4">
                     <p className="text-red-500 bg-red-100 dark:bg-red-900/50 p-3 rounded-lg">{error}</p>
+                </div>
+            )}
+
+            {/* 全局通知 - 固定在顶部中央 */}
+            {copySuccess && (
+                <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-50 ${isNotificationFadingOut ? 'animate-fade-out-up' : 'animate-fade-in-down'}`}>
+                    <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
+                        <span className="material-symbols-outlined text-xl">check_circle</span>
+                        <span className="font-medium">已复制到剪贴板!</span>
+                    </div>
                 </div>
             )}
 
