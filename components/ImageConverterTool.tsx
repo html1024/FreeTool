@@ -1,4 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { decompressFrames, parseGIF } from 'gifuct-js';
+
+// Declare GIF global
+declare global {
+    interface Window {
+        GIF: any;
+    }
+}
 
 type ImageFormat = 'png' | 'jpeg' | 'webp' | 'gif' | 'bmp';
 
@@ -12,6 +20,7 @@ const ImageConverterTool: React.FC = () => {
     const [quality, setQuality] = useState<number>(0.8);
     const [convertedSize, setConvertedSize] = useState<number>(0);
     const [originalSize, setOriginalSize] = useState<number>(0);
+    const [gifQuality, setGifQuality] = useState<'low' | 'medium' | 'high'>('high'); // GIF 质量档位
 
     const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -33,15 +42,88 @@ const ImageConverterTool: React.FC = () => {
             const dataUrl = e.target?.result as string;
             setPreviewUrl(dataUrl);
             // 自动触发转换
-            performConversion(dataUrl, targetFormat, quality);
+            performConversion(dataUrl, targetFormat, quality, gifQuality);
         };
         reader.readAsDataURL(file);
-    }, [targetFormat, quality]);
+    }, [targetFormat, quality, gifQuality]);
 
-    const performConversion = useCallback((imageDataUrl: string, format: ImageFormat, qualityValue: number) => {
+    const performConversion = useCallback(async (imageDataUrl: string, format: ImageFormat, qualityValue: number, gifQualityLevel: 'low' | 'medium' | 'high' = 'high') => {
         setIsConverting(true);
         setError(null);
 
+        // GIF 质量档位对应的颜色数量
+        const gifColorsMap = {
+            'low': 64,      // 低质量 - 64 色，文件最小
+            'medium': 128,  // 中等质量 - 128 色，平衡
+            'high': 256     // 高质量 - 256 色，质量最好
+        };
+        const colors = gifColorsMap[gifQualityLevel];
+
+        // 如果目标格式是 GIF，需要检查源文件是否是 GIF
+        if (format === 'gif' && selectedFile && selectedFile.type === 'image/gif') {
+            // 处理 GIF 到 GIF 的压缩（动态 GIF）
+            try {
+                if (!window.GIF) {
+                    setError('GIF 库未加载,请刷新页面重试');
+                    setIsConverting(false);
+                    return;
+                }
+
+                const arrayBuffer = await selectedFile.arrayBuffer();
+                const gifData = parseGIF(arrayBuffer);
+                const frames = decompressFrames(gifData, true);
+
+                const gif = new window.GIF({
+                    workers: 2,
+                    quality: 10,
+                    workerScript: '/gif.worker.js',
+                    width: frames[0].dims.width,
+                    height: frames[0].dims.height,
+                    transparent: 'rgba(0,0,0,0)',
+                    dither: false,
+                    colors: colors
+                });
+
+                // 为每一帧创建 canvas 并添加到 GIF
+                for (const frame of frames) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = frame.dims.width;
+                    canvas.height = frame.dims.height;
+                    const ctx = canvas.getContext('2d');
+
+                    if (!ctx) continue;
+
+                    const imageData = new ImageData(
+                        new Uint8ClampedArray(frame.patch),
+                        frame.dims.width,
+                        frame.dims.height
+                    );
+                    ctx.putImageData(imageData, 0, 0);
+
+                    gif.addFrame(ctx, {
+                        copy: true,
+                        delay: frame.delay || 100
+                    });
+                }
+
+                gif.on('finished', (blob: Blob) => {
+                    setConvertedSize(blob.size);
+                    const url = URL.createObjectURL(blob);
+                    setConvertedUrl(url);
+                    setIsConverting(false);
+                });
+
+                gif.render();
+                return;
+            } catch (err) {
+                console.error('GIF compression error:', err);
+                setError('GIF 压缩失败: ' + (err instanceof Error ? err.message : '未知错误'));
+                setIsConverting(false);
+                return;
+            }
+        }
+
+        // 其他格式转换（包括静态图片转 GIF）
         const img = new Image();
         img.onload = () => {
             const canvas = document.createElement('canvas');
@@ -57,6 +139,46 @@ const ImageConverterTool: React.FC = () => {
 
             ctx.drawImage(img, 0, 0);
 
+            // GIF 格式特殊处理
+            if (format === 'gif') {
+                if (!window.GIF) {
+                    setError('GIF 库未加载,请刷新页面重试');
+                    setIsConverting(false);
+                    return;
+                }
+
+                try {
+                    const gif = new window.GIF({
+                        workers: 2,
+                        quality: 10,
+                        workerScript: '/gif.worker.js',  // 使用本地 worker 文件
+                        width: img.width,
+                        height: img.height,
+                        transparent: 'rgba(0,0,0,0)',
+                        background: '#fff',
+                        dither: false,
+                        colors: colors  // 使用颜色数量参数进行压缩
+                    });
+
+                    gif.addFrame(ctx, { copy: true, delay: 0 });
+
+                    gif.on('finished', (blob: Blob) => {
+                        setConvertedSize(blob.size);
+                        const url = URL.createObjectURL(blob);
+                        setConvertedUrl(url);
+                        setIsConverting(false);
+                    });
+
+                    gif.render();
+                } catch (err) {
+                    console.error('GIF conversion error:', err);
+                    setError('GIF 转换失败');
+                    setIsConverting(false);
+                }
+                return;
+            }
+
+            // 其他格式使用 Canvas toBlob
             const mimeType = `image/${format === 'jpeg' ? 'jpeg' : format}`;
             // 为支持压缩的格式设置质量参数
             const useQuality = format === 'jpeg' || format === 'webp';
@@ -81,14 +203,14 @@ const ImageConverterTool: React.FC = () => {
         };
 
         img.src = imageDataUrl;
-    }, []);
+    }, [selectedFile]);
 
     // 当格式或质量改变时,自动重新转换
     useEffect(() => {
         if (previewUrl) {
-            performConversion(previewUrl, targetFormat, quality);
+            performConversion(previewUrl, targetFormat, quality, gifQuality);
         }
-    }, [targetFormat, quality, previewUrl, performConversion]);
+    }, [targetFormat, quality, gifQuality, previewUrl, performConversion]);
 
     const handleConvert = useCallback(async () => {
         if (!selectedFile || !previewUrl) {
@@ -96,8 +218,8 @@ const ImageConverterTool: React.FC = () => {
             return;
         }
 
-        performConversion(previewUrl, targetFormat, quality);
-    }, [selectedFile, previewUrl, targetFormat, quality, performConversion]);
+        performConversion(previewUrl, targetFormat, quality, gifQuality);
+    }, [selectedFile, previewUrl, targetFormat, quality, gifQuality, performConversion]);
 
     const formatFileSize = (bytes: number): string => {
         if (bytes === 0) return '0 B';
@@ -232,11 +354,41 @@ const ImageConverterTool: React.FC = () => {
                                     </div>
                                 )}
 
-                                {(targetFormat === 'png' || targetFormat === 'gif') && (
+                                {targetFormat === 'png' && (
                                     <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                                         <p className="text-xs text-blue-600 dark:text-blue-400">
-                                            💡 {targetFormat.toUpperCase()} 是无损格式,不支持质量压缩。如需减小文件大小,建议转换为 JPEG 或 WebP 格式。
+                                            💡 PNG 是无损格式,不支持质量压缩。如需减小文件大小,建议转换为 JPEG 或 WebP 格式。
                                         </p>
+                                    </div>
+                                )}
+
+                                {targetFormat === 'gif' && (
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between px-1">
+                                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">压缩质量</h3>
+                                            <span className="text-sm font-medium text-primary">
+                                                {gifQuality === 'high' && '高质量'}
+                                                {gifQuality === 'medium' && '中等'}
+                                                {gifQuality === 'low' && '高压缩'}
+                                            </span>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="2"
+                                            step="1"
+                                            value={gifQuality === 'low' ? 0 : gifQuality === 'medium' ? 1 : 2}
+                                            onChange={(e) => {
+                                                const val = parseInt(e.target.value);
+                                                setGifQuality(val === 0 ? 'low' : val === 1 ? 'medium' : 'high');
+                                            }}
+                                            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-primary"
+                                        />
+                                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 px-1">
+                                            <span>高压缩</span>
+                                            <span>中等</span>
+                                            <span>高质量</span>
+                                        </div>
                                     </div>
                                 )}
 
@@ -259,9 +411,9 @@ const ImageConverterTool: React.FC = () => {
                                                 </div>
                                             )}
                                         </div>
-                                        {convertedSize > originalSize && (targetFormat === 'png' || targetFormat === 'gif') && (
+                                        {convertedSize > originalSize && targetFormat === 'png' && (
                                             <p className="text-xs text-orange-600 dark:text-orange-400">
-                                                ⚠️ 文件变大是因为 Canvas 导出的 {targetFormat.toUpperCase()} 未经过优化压缩。原始文件可能已经过高度压缩。
+                                                ⚠️ 文件变大是因为 Canvas 导出的 PNG 未经过优化压缩。原始文件可能已经过高度压缩。
                                             </p>
                                         )}
                                     </div>
