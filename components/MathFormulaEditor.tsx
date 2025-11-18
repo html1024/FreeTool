@@ -371,7 +371,7 @@ const MathFormulaEditor: React.FC = () => {
                                 </button>
                             ))}
                         </div>
-                        <div className="p-4 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-2">
+                        <div className="p-4 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-2 max-h-[200px] overflow-y-auto">
                             {SYMBOL_CATEGORIES[activeCategory as keyof typeof SYMBOL_CATEGORIES].map((item, index) => (
                                 <button
                                     key={index}
@@ -388,21 +388,47 @@ const MathFormulaEditor: React.FC = () => {
 
                 {/* 公式模板 */}
                 {activeTab === 'templates' && (
-                    <div className="bg-white dark:bg-gray-800 border-x border-gray-200 dark:border-gray-700 p-4">
+                    <div className="bg-white dark:bg-gray-800 border-x border-gray-200 dark:border-gray-700 p-4 max-h-[300px] overflow-y-auto">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {FORMULA_TEMPLATES.map((template, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => setLatexInput(template.latex)}
-                                    className="text-left p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded hover:border-primary dark:hover:border-primary transition-colors"
-                                >
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">{template.name}</span>
-                                        <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded">{template.category}</span>
-                                    </div>
-                                    <code className="text-xs text-gray-600 dark:text-gray-400 block truncate">{template.latex}</code>
-                                </button>
-                            ))}
+                            {FORMULA_TEMPLATES.map((template, index) => {
+                                // 渲染每个模板的预览
+                                let renderedPreview = '';
+                                try {
+                                    if (window.katex) {
+                                        renderedPreview = window.katex.renderToString(template.latex, {
+                                            throwOnError: false,
+                                            displayMode: true,
+                                            output: 'html',
+                                            strict: false,
+                                            trust: true
+                                        });
+                                    }
+                                } catch (err) {
+                                    console.error('Template render error:', err);
+                                }
+
+                                return (
+                                    <button
+                                        key={index}
+                                        onClick={() => setLatexInput(template.latex)}
+                                        className="text-left p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded hover:border-primary dark:hover:border-primary transition-colors group"
+                                        title={template.latex}
+                                    >
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">{template.name}</span>
+                                            <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded">{template.category}</span>
+                                        </div>
+                                        {/* 渲染的公式预览 */}
+                                        <div className="bg-white dark:bg-gray-800 rounded p-2 flex items-center justify-center min-h-[60px] overflow-x-auto">
+                                            {renderedPreview ? (
+                                                <div className="text-gray-900 dark:text-gray-100" style={{ fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: renderedPreview }} />
+                                            ) : (
+                                                <span className="text-xs text-gray-400">预览加载中...</span>
+                                            )}
+                                        </div>
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 )}
