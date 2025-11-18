@@ -232,22 +232,37 @@ const ImageConverterTool: React.FC = () => {
                                     </div>
                                 )}
 
+                                {(targetFormat === 'png' || targetFormat === 'gif') && (
+                                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                        <p className="text-xs text-blue-600 dark:text-blue-400">
+                                            💡 {targetFormat.toUpperCase()} 是无损格式,不支持质量压缩。如需减小文件大小,建议转换为 JPEG 或 WebP 格式。
+                                        </p>
+                                    </div>
+                                )}
+
                                 {(originalSize > 0 || convertedSize > 0) && (
-                                    <div className="flex items-center justify-between px-1 text-sm">
-                                        <div>
-                                            <span className="text-gray-600 dark:text-gray-400">原始大小: </span>
-                                            <span className="font-semibold text-gray-900 dark:text-white">{formatFileSize(originalSize)}</span>
-                                        </div>
-                                        {convertedSize > 0 && (
+                                    <div className="flex flex-col gap-2 px-1 text-sm">
+                                        <div className="flex items-center justify-between">
                                             <div>
-                                                <span className="text-gray-600 dark:text-gray-400">转换后: </span>
-                                                <span className={`font-semibold ${convertedSize < originalSize ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
-                                                    {formatFileSize(convertedSize)}
-                                                </span>
-                                                <span className={`ml-1 text-xs ${convertedSize < originalSize ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
-                                                    ({convertedSize < originalSize ? '-' : '+'}{Math.abs(Math.round((convertedSize - originalSize) / originalSize * 100))}%)
-                                                </span>
+                                                <span className="text-gray-600 dark:text-gray-400">原始大小: </span>
+                                                <span className="font-semibold text-gray-900 dark:text-white">{formatFileSize(originalSize)}</span>
                                             </div>
+                                            {convertedSize > 0 && (
+                                                <div>
+                                                    <span className="text-gray-600 dark:text-gray-400">转换后: </span>
+                                                    <span className={`font-semibold ${convertedSize < originalSize ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                                                        {formatFileSize(convertedSize)}
+                                                    </span>
+                                                    <span className={`ml-1 text-xs ${convertedSize < originalSize ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                                                        ({convertedSize < originalSize ? '-' : '+'}{Math.abs(Math.round((convertedSize - originalSize) / originalSize * 100))}%)
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {convertedSize > originalSize && (targetFormat === 'png' || targetFormat === 'gif') && (
+                                            <p className="text-xs text-orange-600 dark:text-orange-400">
+                                                ⚠️ 文件变大是因为 Canvas 导出的 {targetFormat.toUpperCase()} 未经过优化压缩。原始文件可能已经过高度压缩。
+                                            </p>
                                         )}
                                     </div>
                                 )}
