@@ -260,10 +260,15 @@ const ImageComparisonTool: React.FC = () => {
                 ctx.font = `${textLayer.fontSize}px ${textLayer.fontFamily}`;
                 const metrics = ctx.measureText(textLayer.text);
 
+                // Text is drawn at (textLayer.x, textLayer.y) with fillText at (0, 0)
+                // So the hit box should be centered around the text position
+                const textWidth = metrics.width;
+                const textHeight = textLayer.fontSize;
+
                 if (
                     x >= textLayer.x - 5 &&
-                    x <= textLayer.x + metrics.width + 5 &&
-                    y >= textLayer.y - textLayer.fontSize - 5 &&
+                    x <= textLayer.x + textWidth + 5 &&
+                    y >= textLayer.y - textHeight &&
                     y <= textLayer.y + 5
                 ) {
                     return layer;
@@ -357,19 +362,36 @@ const ImageComparisonTool: React.FC = () => {
     // 调整图层顺序
     const moveLayer = (id: string, direction: 'up' | 'down') => {
         setLayers(prev => {
-            const index = prev.findIndex(l => l.id === id);
-            if (index === -1) return prev;
+            const currentLayer = prev.find(l => l.id === id);
+            if (!currentLayer) return prev;
+
+            const sortedLayers = [...prev].sort((a, b) => a.zIndex - b.zIndex);
+            const sortedIndex = sortedLayers.findIndex(l => l.id === id);
+
+            if (sortedIndex === -1) return prev;
 
             const newLayers = [...prev];
-            if (direction === 'up' && index < newLayers.length - 1) {
-                [newLayers[index].zIndex, newLayers[index + 1].zIndex] = [
-                    newLayers[index + 1].zIndex,
-                    newLayers[index].zIndex,
+
+            // 'up' means higher zIndex (rendered on top)
+            if (direction === 'up' && sortedIndex < sortedLayers.length - 1) {
+                const targetLayer = sortedLayers[sortedIndex + 1];
+                const currentIdx = prev.findIndex(l => l.id === id);
+                const targetIdx = prev.findIndex(l => l.id === targetLayer.id);
+
+                [newLayers[currentIdx].zIndex, newLayers[targetIdx].zIndex] = [
+                    newLayers[targetIdx].zIndex,
+                    newLayers[currentIdx].zIndex,
                 ];
-            } else if (direction === 'down' && index > 0) {
-                [newLayers[index].zIndex, newLayers[index - 1].zIndex] = [
-                    newLayers[index - 1].zIndex,
-                    newLayers[index].zIndex,
+            }
+            // 'down' means lower zIndex (rendered below)
+            else if (direction === 'down' && sortedIndex > 0) {
+                const targetLayer = sortedLayers[sortedIndex - 1];
+                const currentIdx = prev.findIndex(l => l.id === id);
+                const targetIdx = prev.findIndex(l => l.id === targetLayer.id);
+
+                [newLayers[currentIdx].zIndex, newLayers[targetIdx].zIndex] = [
+                    newLayers[targetIdx].zIndex,
+                    newLayers[currentIdx].zIndex,
                 ];
             }
 
