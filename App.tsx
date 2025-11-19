@@ -10,6 +10,12 @@ import MathFormulaEditor from './components/MathFormulaEditor';
 import TableConverter from './components/TableConverter';
 import BottomNavBar from './components/BottomNavBar';
 
+// 获取资源路径的辅助函数
+const getAssetUrl = (path: string) => {
+    const base = import.meta.env.BASE_URL || '/';
+    return `${base}${path}`.replace(/\/+/g, '/');
+};
+
 type ToolType =
     | 'translate'
     | 'image-converter'
@@ -97,7 +103,7 @@ const App: React.FC = () => {
                 <div className="flex h-full flex-col">
                     <div className="flex items-center gap-3 px-2 pb-4">
                         <img
-                            src="/logo.png"
+                            src={getAssetUrl('logo.png')}
                             alt="FreeTool Logo"
                             className="w-10 h-10 rounded-lg object-cover"
                         />
@@ -175,11 +181,11 @@ const App: React.FC = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <p className="mb-2"><strong>个人微信号：</strong></p>
-                                    <img src="/assets/wechat.jpg" alt="个人微信号" className="w-full h-auto object-contain rounded-lg border border-gray-200 dark:border-gray-700" />
+                                    <img src={getAssetUrl('assets/wechat.jpg')} alt="个人微信号" className="w-full h-auto object-contain rounded-lg border border-gray-200 dark:border-gray-700" />
                                 </div>
                                 <div>
                                     <p className="mb-2"><strong>微信公众号：</strong>我有一计</p>
-                                    <img src="/assets/media.jpg" alt="微信公众号" className="w-full h-auto object-contain rounded-lg border border-gray-200 dark:border-gray-700" />
+                                    <img src={getAssetUrl('assets/media.jpg')} alt="微信公众号" className="w-full h-auto object-contain rounded-lg border border-gray-200 dark:border-gray-700" />
                                 </div>
                             </div>
                             <p><strong>理念：</strong>致力于构建免费好用的产品</p>
