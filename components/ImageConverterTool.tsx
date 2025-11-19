@@ -20,7 +20,7 @@ const ImageConverterTool: React.FC = () => {
     const [quality, setQuality] = useState<number>(0.8);
     const [convertedSize, setConvertedSize] = useState<number>(0);
     const [originalSize, setOriginalSize] = useState<number>(0);
-    const [gifQuality, setGifQuality] = useState<'low' | 'medium' | 'high'>('high'); // GIF 质量档位
+    const [gifQuality, setGifQuality] = useState<'lowest' | 'low' | 'medium' | 'high' | 'highest'>('medium'); // GIF 质量档位，默认平衡
 
     const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -47,17 +47,49 @@ const ImageConverterTool: React.FC = () => {
         reader.readAsDataURL(file);
     }, [targetFormat, quality, gifQuality]);
 
-    const performConversion = useCallback(async (imageDataUrl: string, format: ImageFormat, qualityValue: number, gifQualityLevel: 'low' | 'medium' | 'high' = 'high') => {
+    const performConversion = async (imageDataUrl: string, format: ImageFormat, qualityValue: number, gifQualityLevel: 'lowest' | 'low' | 'medium' | 'high' | 'highest' = 'high') => {
         setIsConverting(true);
         setError(null);
 
-        // GIF 质量档位对应的颜色数量
-        const gifColorsMap = {
-            'low': 64,      // 低质量 - 64 色，文件最小
-            'medium': 128,  // 中等质量 - 128 色，平衡
-            'high': 256     // 高质量 - 256 色，质量最好
+        // GIF 质量档位对应的参数 - 5个档位提供更细粒度的控制
+        const gifSettingsMap = {
+            'lowest': {
+                colors: 32,        // 最少颜色
+                quality: 30,       // 最低质量（最快）
+                sample: 3,         // 跳过2/3的帧
+                dither: false,
+                description: '极限压缩'
+            },
+            'low': {
+                colors: 64,
+                quality: 20,
+                sample: 2,         // 跳过一半的帧
+                dither: false,
+                description: '高压缩'
+            },
+            'medium': {
+                colors: 128,
+                quality: 10,
+                sample: 1,         // 不跳帧
+                dither: false,
+                description: '平衡'
+            },
+            'high': {
+                colors: 192,
+                quality: 5,
+                sample: 1,
+                dither: true,      // 启用抖动
+                description: '高质量'
+            },
+            'highest': {
+                colors: 256,       // 最多颜色
+                quality: 1,        // 最高质量（最慢）
+                sample: 1,
+                dither: true,
+                description: '最高质量'
+            }
         };
-        const colors = gifColorsMap[gifQualityLevel];
+        const settings = gifSettingsMap[gifQualityLevel];
 
         // 如果目标格式是 GIF，需要检查源文件是否是 GIF
         if (format === 'gif' && selectedFile && selectedFile.type === 'image/gif') {
@@ -75,17 +107,18 @@ const ImageConverterTool: React.FC = () => {
 
                 const gif = new window.GIF({
                     workers: 2,
-                    quality: 10,
+                    quality: settings.quality,
                     workerScript: '/gif.worker.js',
                     width: frames[0].dims.width,
                     height: frames[0].dims.height,
                     transparent: 'rgba(0,0,0,0)',
-                    dither: false,
-                    colors: colors
+                    dither: settings.dither,
+                    colors: settings.colors
                 });
 
-                // 为每一帧创建 canvas 并添加到 GIF
-                for (const frame of frames) {
+                // 为每一帧创建 canvas 并添加到 GIF (支持跳帧采样)
+                for (let i = 0; i < frames.length; i += settings.sample) {
+                    const frame = frames[i];
                     const canvas = document.createElement('canvas');
                     canvas.width = frame.dims.width;
                     canvas.height = frame.dims.height;
@@ -102,14 +135,22 @@ const ImageConverterTool: React.FC = () => {
 
                     gif.addFrame(ctx, {
                         copy: true,
-                        delay: frame.delay || 100
+                        delay: (frame.delay || 100) * settings.sample  // 跳帧后需要调整延迟
                     });
                 }
 
                 gif.on('finished', (blob: Blob) => {
-                    setConvertedSize(blob.size);
-                    const url = URL.createObjectURL(blob);
-                    setConvertedUrl(url);
+                    // 智能优化：如果压缩后的文件比原始文件大，使用原始文件
+                    if (blob.size < selectedFile.size) {
+                        setConvertedSize(blob.size);
+                        const url = URL.createObjectURL(blob);
+                        setConvertedUrl(url);
+                    } else {
+                        // 使用原始文件
+                        setConvertedSize(selectedFile.size);
+                        const url = URL.createObjectURL(selectedFile);
+                        setConvertedUrl(url);
+                    }
                     setIsConverting(false);
                 });
 
@@ -150,14 +191,14 @@ const ImageConverterTool: React.FC = () => {
                 try {
                     const gif = new window.GIF({
                         workers: 2,
-                        quality: 10,
-                        workerScript: '/gif.worker.js',  // 使用本地 worker 文件
+                        quality: settings.quality,
+                        workerScript: '/gif.worker.js',
                         width: img.width,
                         height: img.height,
                         transparent: 'rgba(0,0,0,0)',
                         background: '#fff',
-                        dither: false,
-                        colors: colors  // 使用颜色数量参数进行压缩
+                        dither: settings.dither,
+                        colors: settings.colors
                     });
 
                     gif.addFrame(ctx, { copy: true, delay: 0 });
@@ -203,14 +244,14 @@ const ImageConverterTool: React.FC = () => {
         };
 
         img.src = imageDataUrl;
-    }, [selectedFile]);
+    };
 
     // 当格式或质量改变时,自动重新转换
     useEffect(() => {
         if (previewUrl) {
             performConversion(previewUrl, targetFormat, quality, gifQuality);
         }
-    }, [targetFormat, quality, gifQuality, previewUrl, performConversion]);
+    }, [targetFormat, quality, gifQuality, previewUrl]);
 
     const handleConvert = useCallback(async () => {
         if (!selectedFile || !previewUrl) {
@@ -219,7 +260,7 @@ const ImageConverterTool: React.FC = () => {
         }
 
         performConversion(previewUrl, targetFormat, quality, gifQuality);
-    }, [selectedFile, previewUrl, targetFormat, quality, gifQuality, performConversion]);
+    }, [selectedFile, previewUrl, targetFormat, quality, gifQuality]);
 
     const formatFileSize = (bytes: number): string => {
         if (bytes === 0) return '0 B';
@@ -255,7 +296,7 @@ const ImageConverterTool: React.FC = () => {
                     </div>
                 )}
 
-                <div className="w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark shadow-sm overflow-hidden">
+                <div className="w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark shadow-sm">
                     {!previewUrl ? (
                         <label className="flex flex-col items-center gap-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 p-8 sm:p-14 text-center cursor-pointer hover:border-primary dark:hover:border-primary transition-colors m-6">
                             <span className="material-symbols-outlined text-5xl text-gray-400 dark:text-gray-500">upload_file</span>
@@ -312,9 +353,9 @@ const ImageConverterTool: React.FC = () => {
                             </div>
 
                             {/* 右侧：转换选项 */}
-                            <div className="relative flex flex-col p-6 bg-gray-50/50 dark:bg-gray-800/30 gap-6">
-                                <div className="space-y-4">
-                                    <h3 className="px-1 text-lg font-bold text-gray-900 dark:text-white">转换为：</h3>
+                            <div className="relative flex flex-col p-6 bg-gray-50/50 dark:bg-gray-800/30 gap-4">
+                                <div className="space-y-3">
+                                    <h3 className="px-1 text-base font-bold text-gray-900 dark:text-white">转换为：</h3>
                                     <div className="flex h-12 flex-1 items-center justify-center rounded-lg bg-gray-100 dark:bg-white/5 p-1.5">
                                         {(['jpeg', 'png', 'webp', 'gif'] as ImageFormat[]).map((format) => (
                                             <label
@@ -363,31 +404,52 @@ const ImageConverterTool: React.FC = () => {
                                 )}
 
                                 {targetFormat === 'gif' && (
-                                    <div className="space-y-3">
+                                    <div className="space-y-2">
                                         <div className="flex items-center justify-between px-1">
                                             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">压缩质量</h3>
                                             <span className="text-sm font-medium text-primary">
-                                                {gifQuality === 'high' && '高质量'}
-                                                {gifQuality === 'medium' && '中等'}
+                                                {gifQuality === 'lowest' && '极限压缩'}
                                                 {gifQuality === 'low' && '高压缩'}
+                                                {gifQuality === 'medium' && '平衡'}
+                                                {gifQuality === 'high' && '高质量'}
+                                                {gifQuality === 'highest' && '最高质量'}
                                             </span>
                                         </div>
                                         <input
                                             type="range"
                                             min="0"
-                                            max="2"
+                                            max="4"
                                             step="1"
-                                            value={gifQuality === 'low' ? 0 : gifQuality === 'medium' ? 1 : 2}
+                                            value={
+                                                gifQuality === 'lowest' ? 0 :
+                                                gifQuality === 'low' ? 1 :
+                                                gifQuality === 'medium' ? 2 :
+                                                gifQuality === 'high' ? 3 : 4
+                                            }
                                             onChange={(e) => {
                                                 const val = parseInt(e.target.value);
-                                                setGifQuality(val === 0 ? 'low' : val === 1 ? 'medium' : 'high');
+                                                setGifQuality(
+                                                    val === 0 ? 'lowest' :
+                                                    val === 1 ? 'low' :
+                                                    val === 2 ? 'medium' :
+                                                    val === 3 ? 'high' : 'highest'
+                                                );
                                             }}
                                             className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-primary"
                                         />
                                         <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 px-1">
-                                            <span>高压缩</span>
-                                            <span>中等</span>
-                                            <span>高质量</span>
+                                            <span>极限</span>
+                                            <span>高压</span>
+                                            <span>平衡</span>
+                                            <span>高质</span>
+                                            <span>最高</span>
+                                        </div>
+                                        <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs text-gray-600 dark:text-gray-400">
+                                            {gifQuality === 'lowest' && '💡 32色 + 跳2/3帧，文件极小，适合表情包'}
+                                            {gifQuality === 'low' && '💡 64色 + 跳帧，文件较小，适合简单动画'}
+                                            {gifQuality === 'medium' && '💡 128色，平衡质量和大小'}
+                                            {gifQuality === 'high' && '💡 192色 + 抖动，高质量，文件适中'}
+                                            {gifQuality === 'highest' && '💡 256色 + 抖动，质量最佳，文件最大'}
                                         </div>
                                     </div>
                                 )}
@@ -416,13 +478,19 @@ const ImageConverterTool: React.FC = () => {
                                                 ⚠️ 文件变大是因为 Canvas 导出的 PNG 未经过优化压缩。原始文件可能已经过高度压缩。
                                             </p>
                                         )}
+                                        {convertedSize === originalSize && targetFormat === 'gif' && (
+                                            <p className="text-xs text-blue-600 dark:text-blue-400">
+                                                ℹ️ 已使用原始文件（原始文件已经是最优的）
+                                            </p>
+                                        )}
                                     </div>
                                 )}
 
                                 <button
                                     onClick={handleDownload}
                                     disabled={!convertedUrl || isConverting}
-                                    className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg bg-primary px-6 text-base font-bold text-white shadow-lg shadow-primary/20 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 mt-auto"
+                                    style={{ backgroundColor: '#607AFB' }}
+                                    className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg px-6 text-sm font-bold text-white shadow-lg transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     {isConverting ? (
                                         <>
