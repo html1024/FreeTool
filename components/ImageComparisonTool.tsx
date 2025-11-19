@@ -5,6 +5,7 @@ interface ImageLayer {
     name: string;
     src: string;
     visible: boolean;
+    locked: boolean;
     x: number;
     y: number;
     width: number;
@@ -22,6 +23,7 @@ interface TextLayer {
     name: string;
     text: string;
     visible: boolean;
+    locked: boolean;
     x: number;
     y: number;
     fontSize: number;
@@ -39,10 +41,12 @@ const ImageComparisonTool: React.FC = () => {
     const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+    const [initialLayerPos, setInitialLayerPos] = useState<{ x: number; y: number } | null>(null);
     const [canvasSize, setCanvasSize] = useState({ width: 1200, height: 800 });
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const loadedImagesRef = useRef<Map<string, HTMLImageElement>>(new Map());
 
     // 绘制画布
     const drawCanvas = useCallback(() => {
@@ -81,8 +85,14 @@ const ImageComparisonTool: React.FC = () => {
 
             if (layer.type === 'image') {
                 const imgLayer = layer as ImageLayer;
-                const img = new Image();
-                img.src = imgLayer.src;
+
+                // 使用缓存的图片
+                let img = loadedImagesRef.current.get(imgLayer.id);
+                if (!img) {
+                    img = new Image();
+                    img.src = imgLayer.src;
+                    loadedImagesRef.current.set(imgLayer.id, img);
+                }
 
                 ctx.translate(imgLayer.x + imgLayer.width / 2, imgLayer.y + imgLayer.height / 2);
                 ctx.rotate((imgLayer.rotation * Math.PI) / 180);
@@ -138,18 +148,22 @@ const ImageComparisonTool: React.FC = () => {
             reader.onload = (event) => {
                 const img = new Image();
                 img.onload = () => {
-                    const maxSize = 400;
-                    let width = img.width;
-                    let height = img.height;
+                    // 根据画布宽度动态调整图片尺寸
+                    const maxCanvasWidth = canvasSize.width * 0.8; // 最大占画布80%宽度
+                    const maxCanvasHeight = canvasSize.height * 0.8; // 最大占画布80%高度
 
-                    if (width > maxSize || height > maxSize) {
-                        if (width > height) {
-                            height = (height / width) * maxSize;
-                            width = maxSize;
-                        } else {
-                            width = (width / height) * maxSize;
-                            height = maxSize;
-                        }
+                    let displayWidth = img.width;
+                    let displayHeight = img.height;
+                    let scale = 1;
+
+                    // 如果图片超过画布宽度或高度，等比例缩小
+                    if (displayWidth > maxCanvasWidth || displayHeight > maxCanvasHeight) {
+                        const widthScale = maxCanvasWidth / displayWidth;
+                        const heightScale = maxCanvasHeight / displayHeight;
+                        scale = Math.min(widthScale, heightScale);
+
+                        displayWidth = img.width * scale;
+                        displayHeight = img.height * scale;
                     }
 
                     const newLayer: Layer = {
@@ -158,19 +172,23 @@ const ImageComparisonTool: React.FC = () => {
                         name: `图片 ${layers.length + index + 1}`,
                         src: event.target?.result as string,
                         visible: true,
+                        locked: false,
                         x: 50 + index * 30,
                         y: 50 + index * 30,
-                        width,
-                        height,
+                        width: displayWidth,
+                        height: displayHeight,
                         originalWidth: img.width,
                         originalHeight: img.height,
-                        scale: 1,
+                        scale: scale,
                         rotation: 0,
                         opacity: 1,
                         zIndex: layers.length + index,
                     };
 
                     setLayers(prev => [...prev, newLayer]);
+
+                    // 缓存图片
+                    loadedImagesRef.current.set(newLayer.id, img);
                 };
                 img.src = event.target?.result as string;
             };
@@ -186,8 +204,9 @@ const ImageComparisonTool: React.FC = () => {
             id: Date.now().toString(),
             type: 'text',
             name: `文本 ${layers.filter(l => l.type === 'text').length + 1}`,
-            text: '双击编辑文本',
+            text: '文本内容',
             visible: true,
+            locked: false,
             x: canvasSize.width / 2,
             y: canvasSize.height / 2,
             fontSize: 32,
@@ -219,7 +238,7 @@ const ImageComparisonTool: React.FC = () => {
         const sortedLayers = [...layers].sort((a, b) => b.zIndex - a.zIndex);
 
         for (const layer of sortedLayers) {
-            if (!layer.visible) continue;
+            if (!layer.visible || layer.locked) continue; // 跳过不可见或锁定的图层
 
             if (layer.type === 'image') {
                 const imgLayer = layer as ImageLayer;
@@ -260,10 +279,11 @@ const ImageComparisonTool: React.FC = () => {
         const point = getCanvasPoint(e);
         const layer = getLayerAtPoint(point.x, point.y);
 
-        if (layer) {
+        if (layer && !layer.locked) {
             setSelectedLayerId(layer.id);
             setIsDragging(true);
             setDragStart(point);
+            setInitialLayerPos({ x: layer.x, y: layer.y });
         } else {
             setSelectedLayerId(null);
         }
@@ -271,7 +291,11 @@ const ImageComparisonTool: React.FC = () => {
 
     // 鼠标移动
     const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (!isDragging || !dragStart || !selectedLayerId) return;
+        if (!isDragging || !dragStart || !selectedLayerId || !initialLayerPos) return;
+
+        // 检查图层是否被锁定
+        const currentLayer = layers.find(l => l.id === selectedLayerId);
+        if (currentLayer?.locked) return;
 
         const point = getCanvasPoint(e);
         const dx = point.x - dragStart.x;
@@ -279,30 +303,46 @@ const ImageComparisonTool: React.FC = () => {
 
         setLayers(prev =>
             prev.map(layer => {
-                if (layer.id === selectedLayerId) {
+                if (layer.id === selectedLayerId && !layer.locked) {
                     return {
                         ...layer,
-                        x: layer.x + dx,
-                        y: layer.y + dy,
+                        x: initialLayerPos.x + dx,
+                        y: initialLayerPos.y + dy,
                     };
                 }
                 return layer;
             })
         );
-
-        setDragStart(point);
     };
 
     // 鼠标释放
     const handleMouseUp = () => {
         setIsDragging(false);
         setDragStart(null);
+        setInitialLayerPos(null);
     };
 
     // 切换图层可见性
     const toggleLayerVisibility = (id: string) => {
         setLayers(prev =>
             prev.map(layer => (layer.id === id ? { ...layer, visible: !layer.visible } : layer))
+        );
+    };
+
+    // 切换图层锁定状态
+    const toggleLayerLock = (id: string) => {
+        setLayers(prev =>
+            prev.map(layer => {
+                if (layer.id === id) {
+                    const newLocked = !layer.locked;
+                    // 如果锁定了当前选中的图层，取消选中
+                    if (newLocked && selectedLayerId === id) {
+                        setSelectedLayerId(null);
+                    }
+                    return { ...layer, locked: newLocked };
+                }
+                return layer;
+            })
         );
     };
 
@@ -453,6 +493,7 @@ const ImageComparisonTool: React.FC = () => {
                                                 value={(selectedLayer as TextLayer).text}
                                                 onChange={e => updateSelectedLayer({ text: e.target.value })}
                                                 className="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-transparent text-sm"
+                                                placeholder="输入文本内容"
                                             />
                                         </div>
                                         <div>
@@ -537,12 +578,14 @@ const ImageComparisonTool: React.FC = () => {
                                         .map(layer => (
                                             <div
                                                 key={layer.id}
-                                                className={`p-3 rounded-lg border transition-all cursor-pointer ${
+                                                className={`p-3 rounded-lg border transition-all ${
+                                                    layer.locked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                                                } ${
                                                     selectedLayerId === layer.id
                                                         ? 'border-primary bg-primary/10'
                                                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                                                 }`}
-                                                onClick={() => setSelectedLayerId(layer.id)}
+                                                onClick={() => !layer.locked && setSelectedLayerId(layer.id)}
                                             >
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <button
@@ -551,9 +594,26 @@ const ImageComparisonTool: React.FC = () => {
                                                             toggleLayerVisibility(layer.id);
                                                         }}
                                                         className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                                                        title={layer.visible ? '隐藏' : '显示'}
                                                     >
                                                         <span className="material-symbols-outlined text-base">
                                                             {layer.visible ? 'visibility' : 'visibility_off'}
+                                                        </span>
+                                                    </button>
+                                                    <button
+                                                        onClick={e => {
+                                                            e.stopPropagation();
+                                                            toggleLayerLock(layer.id);
+                                                        }}
+                                                        className={`${
+                                                            layer.locked
+                                                                ? 'text-yellow-600 dark:text-yellow-400'
+                                                                : 'text-gray-600 dark:text-gray-400'
+                                                        } hover:text-gray-900 dark:hover:text-white`}
+                                                        title={layer.locked ? '解锁' : '锁定'}
+                                                    >
+                                                        <span className="material-symbols-outlined text-base">
+                                                            {layer.locked ? 'lock' : 'lock_open'}
                                                         </span>
                                                     </button>
                                                     <span className="material-symbols-outlined text-base text-gray-600 dark:text-gray-400">
@@ -561,6 +621,11 @@ const ImageComparisonTool: React.FC = () => {
                                                     </span>
                                                     <span className="flex-1 text-sm font-medium text-gray-900 dark:text-white truncate">
                                                         {layer.name}
+                                                        {layer.locked && (
+                                                            <span className="ml-1 text-xs text-yellow-600 dark:text-yellow-400">
+                                                                (锁定)
+                                                            </span>
+                                                        )}
                                                     </span>
                                                     <button
                                                         onClick={e => {
@@ -568,6 +633,7 @@ const ImageComparisonTool: React.FC = () => {
                                                             deleteLayer(layer.id);
                                                         }}
                                                         className="text-red-500 hover:text-red-600"
+                                                        title="删除"
                                                     >
                                                         <span className="material-symbols-outlined text-base">
                                                             delete
@@ -612,17 +678,107 @@ const ImageComparisonTool: React.FC = () => {
                                     const canvas = canvasRef.current;
                                     if (!canvas) return;
 
-                                    canvas.toBlob(blob => {
-                                        if (!blob) return;
-                                        const url = URL.createObjectURL(blob);
-                                        const a = document.createElement('a');
-                                        a.href = url;
-                                        a.download = `comparison-${Date.now()}.png`;
-                                        document.body.appendChild(a);
-                                        a.click();
-                                        document.body.removeChild(a);
-                                        URL.revokeObjectURL(url);
+                                    // 创建一个临时画布，只绘制图层内容（无背景）
+                                    const exportCanvas = document.createElement('canvas');
+                                    exportCanvas.width = canvas.width;
+                                    exportCanvas.height = canvas.height;
+                                    const exportCtx = exportCanvas.getContext('2d');
+                                    if (!exportCtx) return;
+
+                                    // 按 zIndex 排序图层
+                                    const sortedLayers = [...layers].sort((a, b) => a.zIndex - b.zIndex);
+
+                                    // 只绘制可见图层，不绘制背景
+                                    sortedLayers.forEach(layer => {
+                                        if (!layer.visible) return;
+
+                                        exportCtx.save();
+                                        exportCtx.globalAlpha = layer.opacity;
+
+                                        if (layer.type === 'image') {
+                                            const imgLayer = layer as ImageLayer;
+                                            let img = loadedImagesRef.current.get(imgLayer.id);
+                                            if (img) {
+                                                exportCtx.translate(imgLayer.x + imgLayer.width / 2, imgLayer.y + imgLayer.height / 2);
+                                                exportCtx.rotate((imgLayer.rotation * Math.PI) / 180);
+                                                exportCtx.drawImage(img, -imgLayer.width / 2, -imgLayer.height / 2, imgLayer.width, imgLayer.height);
+                                            }
+                                        } else if (layer.type === 'text') {
+                                            const textLayer = layer as TextLayer;
+                                            exportCtx.translate(textLayer.x, textLayer.y);
+                                            exportCtx.rotate((textLayer.rotation * Math.PI) / 180);
+                                            exportCtx.font = `${textLayer.fontSize}px ${textLayer.fontFamily}`;
+                                            exportCtx.fillStyle = textLayer.color;
+                                            exportCtx.fillText(textLayer.text, 0, 0);
+                                        }
+
+                                        exportCtx.restore();
                                     });
+
+                                    // 获取导出画布的像素数据
+                                    const imageData = exportCtx.getImageData(0, 0, exportCanvas.width, exportCanvas.height);
+                                    const pixels = imageData.data;
+
+                                    // 找到非透明区域的边界
+                                    let minX = exportCanvas.width;
+                                    let minY = exportCanvas.height;
+                                    let maxX = 0;
+                                    let maxY = 0;
+
+                                    for (let y = 0; y < exportCanvas.height; y++) {
+                                        for (let x = 0; x < exportCanvas.width; x++) {
+                                            const index = (y * exportCanvas.width + x) * 4;
+                                            const alpha = pixels[index + 3];
+
+                                            // 如果像素不是完全透明的
+                                            if (alpha > 0) {
+                                                if (x < minX) minX = x;
+                                                if (x > maxX) maxX = x;
+                                                if (y < minY) minY = y;
+                                                if (y > maxY) maxY = y;
+                                            }
+                                        }
+                                    }
+
+                                    // 如果没有找到非透明像素，使用整个画布
+                                    if (minX > maxX || minY > maxY) {
+                                        minX = 0;
+                                        minY = 0;
+                                        maxX = exportCanvas.width - 1;
+                                        maxY = exportCanvas.height - 1;
+                                    }
+
+                                    // 计算裁剪区域的尺寸
+                                    const cropWidth = maxX - minX + 1;
+                                    const cropHeight = maxY - minY + 1;
+
+                                    // 创建最终的导出画布
+                                    const finalCanvas = document.createElement('canvas');
+                                    finalCanvas.width = cropWidth;
+                                    finalCanvas.height = cropHeight;
+                                    const finalCtx = finalCanvas.getContext('2d');
+
+                                    if (finalCtx) {
+                                        // 将裁剪区域绘制到最终画布
+                                        finalCtx.drawImage(
+                                            exportCanvas,
+                                            minX, minY, cropWidth, cropHeight,
+                                            0, 0, cropWidth, cropHeight
+                                        );
+
+                                        // 导出裁剪后的图片
+                                        finalCanvas.toBlob(blob => {
+                                            if (!blob) return;
+                                            const url = URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = `comparison-${Date.now()}.png`;
+                                            document.body.appendChild(a);
+                                            a.click();
+                                            document.body.removeChild(a);
+                                            URL.revokeObjectURL(url);
+                                        });
+                                    }
                                 }}
                                 disabled={layers.length === 0}
                                 style={{ backgroundColor: '#607AFB' }}
