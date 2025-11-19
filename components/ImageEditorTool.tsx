@@ -546,17 +546,17 @@ const ImageEditorTool: React.FC = () => {
     };
 
     return (
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-            <div className="flex flex-col gap-8">
-                <div className="flex flex-col gap-3 text-center">
-                    <h1 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white sm:text-5xl">
-                        图片快速编辑
-                    </h1>
-                    <p className="text-base font-normal text-gray-600 dark:text-gray-400">
-                        支持裁剪、调整分辨率、涂鸦、马赛克等功能
-                    </p>
-                </div>
+        <div className="flex w-full flex-col items-center px-4 py-10 sm:px-6 lg:px-8">
+            <div className="flex w-full max-w-7xl flex-col items-center gap-2 text-center mb-8">
+                <p className="text-3xl font-black leading-tight tracking-tighter text-gray-900 dark:text-white sm:text-4xl">
+                    图片快速编辑
+                </p>
+                <p className="text-base font-normal text-gray-500 dark:text-gray-400">
+                    支持裁剪、调整分辨率、涂鸦、马赛克等功能。
+                </p>
+            </div>
 
+            <div className="w-full max-w-7xl flex flex-col gap-8">
                 {!imageSrc ? (
                     <div className="w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark shadow-sm">
                         <label className="flex flex-col items-center gap-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 p-8 sm:p-14 text-center cursor-pointer hover:border-primary dark:hover:border-primary transition-colors m-6">

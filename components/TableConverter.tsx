@@ -303,24 +303,25 @@ const TableConverter: React.FC = () => {
     const retryGrid = () => setGridVersion(v => v + 1);
 
     return (
-        <section className="mt-16 flex flex-col gap-6">
-            <div className="flex flex-col gap-2 text-center">
-                <h2 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">表格格式转换</h2>
-                <p className="text-base text-gray-600 dark:text-gray-400">
-                    基于 DataGridXL 的可编辑表格，实时导出 Markdown / LaTeX / Word，体验类似 tableconvert.com。
+        <div className="flex w-full flex-col items-center px-4 py-10 sm:px-6 lg:px-8">
+            <div className="flex w-full max-w-7xl flex-col items-center gap-2 text-center mb-8">
+                <p className="text-3xl font-black leading-tight tracking-tighter text-gray-900 dark:text-white sm:text-4xl">表格格式转换</p>
+                <p className="text-base font-normal text-gray-500 dark:text-gray-400">
+                    基于 DataGridXL 的可编辑表格，实时导出 Markdown / LaTeX / Word。
                 </p>
             </div>
 
-            {copySuccess && (
-                <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-50 ${isNotificationFadingOut ? 'animate-fade-out-up' : 'animate-fade-in-down'}`}>
-                    <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
-                        <span className="material-symbols-outlined text-xl">check_circle</span>
-                        <span className="font-medium">已复制到剪贴板!</span>
+            <div className="w-full max-w-7xl flex flex-col gap-6">
+                {copySuccess && (
+                    <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-50 ${isNotificationFadingOut ? 'animate-fade-out-up' : 'animate-fade-in-down'}`}>
+                        <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
+                            <span className="material-symbols-outlined text-xl">check_circle</span>
+                            <span className="font-medium">已复制到剪贴板!</span>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark p-6 shadow-sm flex flex-col gap-4">
                     <div className="flex flex-wrap gap-4 items-center">
                         <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
@@ -434,7 +435,8 @@ const TableConverter: React.FC = () => {
                     </div>
                 </div>
             </div>
-        </section>
+            </div>
+        </div>
     );
 };
 

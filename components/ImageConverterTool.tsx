@@ -283,13 +283,13 @@ const ImageConverterTool: React.FC = () => {
     }, [convertedUrl, selectedFile, targetFormat]);
 
     return (
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-            <div className="flex flex-col gap-10">
-                <div className="flex flex-col gap-3 text-center">
-                    <h1 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white sm:text-5xl">在线图片格式转换</h1>
-                    <p className="text-base font-normal text-gray-600 dark:text-gray-400">快速将您的图片转换为 JPG, PNG, WEBP 等多种格式。免费、安全。</p>
-                </div>
+        <div className="flex w-full flex-col items-center px-4 py-10 sm:px-6 lg:px-8">
+            <div className="flex w-full max-w-6xl flex-col items-center gap-2 text-center mb-8">
+                <p className="text-3xl font-black leading-tight tracking-tighter text-gray-900 dark:text-white sm:text-4xl">在线图片格式转换</p>
+                <p className="text-base font-normal text-gray-500 dark:text-gray-400">快速将您的图片转换为 JPG, PNG, WEBP 等多种格式。免费、安全。</p>
+            </div>
 
+            <div className="w-full max-w-6xl flex flex-col gap-10">
                 {error && (
                     <div className="bg-red-100 dark:bg-red-900/50 border border-red-200 dark:border-red-800 rounded-lg p-4">
                         <p className="text-red-800 dark:text-red-300 text-sm">{error}</p>

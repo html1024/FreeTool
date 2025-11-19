@@ -422,14 +422,14 @@ const ImageComparisonTool: React.FC = () => {
     const selectedLayer = layers.find(l => l.id === selectedLayerId);
 
     return (
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="flex w-full flex-col items-center px-4 py-10 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-8">
-                <div className="flex flex-col gap-3 text-center">
-                    <h1 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white sm:text-5xl">
-                        多图移动对比
-                    </h1>
-                    <p className="text-base font-normal text-gray-600 dark:text-gray-400">
-                        在一个画布中导入多张图片，支持图层管理、位置调整和文本添加
+                <div className="flex w-full max-w-7xl flex-col items-center gap-2 text-center mb-8">
+                    <p className="text-3xl font-black leading-tight tracking-tighter text-gray-900 dark:text-white sm:text-4xl">
+                        多图自由拼接
+                    </p>
+                    <p className="text-base font-normal text-gray-500 dark:text-gray-400">
+                        在一个画布中导入多张图片，支持图层管理、位置调整和文本添加。
                     </p>
                 </div>
 

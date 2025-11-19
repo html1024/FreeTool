@@ -73,7 +73,7 @@ const TOOLS: Tool[] = [
     },
     {
         id: 'image-comparison',
-        name: '多图移动对比',
+        name: '多图自由拼接',
         icon: 'layers',
         component: ImageComparisonTool,
     },
