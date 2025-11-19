@@ -68,6 +68,8 @@ const TableConverter: React.FC = () => {
     const [useHeader, setUseHeader] = useState<boolean>(true);
     const [gridStatus, setGridStatus] = useState<'loading' | 'ready' | 'error'>('loading');
     const [gridVersion, setGridVersion] = useState<number>(0);
+    const [copySuccess, setCopySuccess] = useState<boolean>(false);
+    const [isNotificationFadingOut, setIsNotificationFadingOut] = useState<boolean>(false);
 
     const gridContainerRef = useRef<HTMLDivElement>(null);
     const gridInstanceRef = useRef<DataGridXLInstance | null>(null);
@@ -284,6 +286,15 @@ const TableConverter: React.FC = () => {
     const handleCopy = async () => {
         try {
             await navigator.clipboard.writeText(formattedOutput);
+            setCopySuccess(true);
+            setIsNotificationFadingOut(false);
+            window.setTimeout(() => {
+                setIsNotificationFadingOut(true);
+            }, 1700);
+            window.setTimeout(() => {
+                setCopySuccess(false);
+                setIsNotificationFadingOut(false);
+            }, 2000);
         } catch (error) {
             console.error('Copy failed', error);
         }
@@ -299,6 +310,15 @@ const TableConverter: React.FC = () => {
                     基于 DataGridXL 的可编辑表格，实时导出 Markdown / LaTeX / Word，体验类似 tableconvert.com。
                 </p>
             </div>
+
+            {copySuccess && (
+                <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-50 ${isNotificationFadingOut ? 'animate-fade-out-up' : 'animate-fade-in-down'}`}>
+                    <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
+                        <span className="material-symbols-outlined text-xl">check_circle</span>
+                        <span className="font-medium">已复制到剪贴板!</span>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark p-6 shadow-sm flex flex-col gap-4">
@@ -400,7 +420,7 @@ const TableConverter: React.FC = () => {
                                 className="flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                             >
                                 <span className="material-symbols-outlined text-base">content_copy</span>
-                                复制
+                                <span>{copySuccess ? '已复制!' : '复制'}</span>
                             </button>
                             <button
                                 onClick={handleDownload}
