@@ -5,6 +5,7 @@ import CodeHighlightTool from './components/CodeHighlightTool';
 import TextFormatterTool from './components/TextFormatterTool';
 import JsonFormatterTool from './components/JsonFormatterTool';
 import MathFormulaEditor from './components/MathFormulaEditor';
+import BottomNavBar from './components/BottomNavBar';
 
 type ToolType = 'translate' | 'image-converter' | 'code-highlight' | 'text-formatter' | 'json-formatter' | 'math-formula';
 
@@ -60,8 +61,8 @@ const App: React.FC = () => {
     const ActiveComponent = TOOLS.find(tool => tool.id === activeTool)?.component || TranslateTool;
 
     return (
-        <div className="relative flex min-h-screen w-full">
-            <aside className="sticky top-0 h-screen w-64 flex-shrink-0 bg-surface-light dark:bg-surface-dark border-r border-border-light dark:border-border-dark p-4 hidden md:flex flex-col">
+        <div className="relative flex min-h-screen w-full bg-gray-50 dark:bg-gray-900">
+            <aside className="sticky top-0 h-screen w-64 flex-shrink-0 bg-gray-100 dark:bg-gray-800 border-r border-border-light dark:border-border-dark p-4 hidden md:flex flex-col">
                 <div className="flex h-full flex-col">
                     <div className="flex items-center gap-3 px-2 pb-4">
                         <img
@@ -70,8 +71,8 @@ const App: React.FC = () => {
                             className="w-10 h-10 rounded-lg object-cover"
                         />
                         <div className="flex flex-col">
-                            <h1 className="text-text-light dark:text-text-dark text-base font-medium leading-normal">FreeTool 工具箱</h1>
-                            <p className="text-subtle-light dark:text-subtle-dark text-sm font-normal leading-normal">在线小工具</p>
+                            <h1 className="text-gray-900 dark:text-gray-100 text-base font-medium leading-normal">FreeTool 工具箱</h1>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal">在线小工具</p>
                         </div>
                     </div>
                     <nav className="flex flex-col gap-2">
@@ -79,12 +80,11 @@ const App: React.FC = () => {
                             <button
                                 key={tool.id}
                                 onClick={() => setActiveTool(tool.id)}
-                                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all duration-200 ${
                                     activeTool === tool.id
-                                        ? 'bg-primary/10 text-primary'
-                                        : 'text-text-light dark:text-text-dark hover:bg-primary/10'
-                                }`}
-                            >
+                                        ? 'bg-gray-200/50 text-gray-900 dark:bg-gray-700/50 dark:text-gray-100 shadow-sm'
+                                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200/50 hover:text-gray-900 dark:hover:bg-gray-700/50 dark:hover:text-gray-100'
+                                }`}                            >
                                 <span
                                     className="material-symbols-outlined text-xl"
                                     style={activeTool === tool.id ? { fontVariationSettings: "'FILL' 1" } : {}}
@@ -98,20 +98,9 @@ const App: React.FC = () => {
                 </div>
             </aside>
 
-            {/* 移动端工具选择器 */}
-            <div className="md:hidden fixed top-0 left-0 right-0 bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark z-10 p-4">
-                <select
-                    value={activeTool}
-                    onChange={(e) => setActiveTool(e.target.value as ToolType)}
-                    className="w-full appearance-none rounded-lg border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark px-4 py-2.5 text-text-light dark:text-text-dark focus:border-primary focus:ring-primary/20 focus:ring-2"
-                >
-                    {TOOLS.map(tool => (
-                        <option key={tool.id} value={tool.id}>{tool.name}</option>
-                    ))}
-                </select>
-            </div>
+            <BottomNavBar activeTool={activeTool} setActiveTool={setActiveTool} />
 
-            <main className="flex-1 p-6 sm:p-8 md:p-10 mt-20 md:mt-0">
+            <main className="flex-1 p-6 sm:p-8 md:p-10 pb-20">
                 <ActiveComponent />
             </main>
         </div>
