@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import TranslateTool from './components/TranslateTool';
 import ImageConverterTool from './components/ImageConverterTool';
 import ImageEditorTool from './components/ImageEditorTool';
+import ImageComparisonTool from './components/ImageComparisonTool';
 import CodeHighlightTool from './components/CodeHighlightTool';
 import TextFormatterTool from './components/TextFormatterTool';
 import JsonFormatterTool from './components/JsonFormatterTool';
@@ -13,6 +14,7 @@ type ToolType =
     | 'translate'
     | 'image-converter'
     | 'image-editor'
+    | 'image-comparison'
     | 'code-highlight'
     | 'text-formatter'
     | 'json-formatter'
@@ -68,6 +70,12 @@ const TOOLS: Tool[] = [
         name: '图片快速编辑',
         icon: 'edit',
         component: ImageEditorTool,
+    },
+    {
+        id: 'image-comparison',
+        name: '多图移动对比',
+        icon: 'layers',
+        component: ImageComparisonTool,
     },
     {
         id: 'table-converter',

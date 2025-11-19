@@ -4,6 +4,7 @@ type ToolType =
     | 'translate'
     | 'image-converter'
     | 'image-editor'
+    | 'image-comparison'
     | 'code-highlight'
     | 'text-formatter'
     | 'json-formatter'
@@ -51,6 +52,11 @@ const TOOLS: Tool[] = [
         id: 'image-editor',
         name: '编辑',
         icon: 'edit',
+    },
+    {
+        id: 'image-comparison',
+        name: '对比',
+        icon: 'layers',
     },
     {
         id: 'table-converter',
