@@ -3,6 +3,7 @@ import React from 'react';
 type ToolType =
     | 'translate'
     | 'image-converter'
+    | 'image-editor'
     | 'code-highlight'
     | 'text-formatter'
     | 'json-formatter'
@@ -45,6 +46,11 @@ const TOOLS: Tool[] = [
         id: 'image-converter',
         name: '图片',
         icon: 'image',
+    },
+    {
+        id: 'image-editor',
+        name: '编辑',
+        icon: 'edit',
     },
     {
         id: 'table-converter',

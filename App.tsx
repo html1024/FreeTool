@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import TranslateTool from './components/TranslateTool';
 import ImageConverterTool from './components/ImageConverterTool';
+import ImageEditorTool from './components/ImageEditorTool';
 import CodeHighlightTool from './components/CodeHighlightTool';
 import TextFormatterTool from './components/TextFormatterTool';
 import JsonFormatterTool from './components/JsonFormatterTool';
@@ -11,6 +12,7 @@ import BottomNavBar from './components/BottomNavBar';
 type ToolType =
     | 'translate'
     | 'image-converter'
+    | 'image-editor'
     | 'code-highlight'
     | 'text-formatter'
     | 'json-formatter'
@@ -60,6 +62,12 @@ const TOOLS: Tool[] = [
         name: '图片格式转换',
         icon: 'image',
         component: ImageConverterTool,
+    },
+    {
+        id: 'image-editor',
+        name: '图片快速编辑',
+        icon: 'edit',
+        component: ImageEditorTool,
     },
     {
         id: 'table-converter',
