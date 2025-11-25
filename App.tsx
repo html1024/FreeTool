@@ -8,6 +8,7 @@ import TextFormatterTool from './components/TextFormatterTool';
 import JsonFormatterTool from './components/JsonFormatterTool';
 import MathFormulaEditor from './components/MathFormulaEditor';
 import TableConverter from './components/TableConverter';
+import VideoAspectConverter from './components/VideoAspectConverter';
 import BottomNavBar from './components/BottomNavBar';
 
 // 获取资源路径的辅助函数
@@ -25,7 +26,8 @@ type ToolType =
     | 'text-formatter'
     | 'json-formatter'
     | 'math-formula'
-    | 'table-converter';
+    | 'table-converter'
+    | 'video-aspect-converter';
 
 interface Tool {
     id: ToolType;
@@ -88,6 +90,12 @@ const TOOLS: Tool[] = [
         name: '表格格式转换',
         icon: 'table_chart',
         component: TableConverter,
+    },
+    {
+        id: 'video-aspect-converter',
+        name: '视频比例转换',
+        icon: 'aspect_ratio',
+        component: VideoAspectConverter,
     },
 ];
 
