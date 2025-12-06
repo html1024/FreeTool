@@ -160,16 +160,16 @@ const TextDiffTool: React.FC = () => {
                     key={index}
                     className={`flex ${bgColor}`}
                     style={{
-                        height: '20px',
-                        paddingLeft: '12px',
+                        height: '24px',
+                        paddingLeft: '0px',
                         paddingRight: '16px',
                     }}
                 >
                     <span
                         className="text-gray-400 dark:text-gray-600 select-none text-right flex-shrink-0 font-mono"
                         style={{
-                            fontSize: '11px',
-                            lineHeight: '20px',
+                            fontSize: '15px',
+                            lineHeight: '24px',
                             width: '32px',
                             marginRight: '8px'
                         }}
@@ -340,12 +340,12 @@ const TextDiffTool: React.FC = () => {
                                 onScroll={() => handleScroll('left')}
                                 className="w-full h-full resize-none bg-transparent text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-gray-400 dark:placeholder:text-gray-500 font-mono min-h-[500px] relative z-10"
                                 style={{
-                                    paddingLeft: '52px',
+                                    paddingLeft: '44px',
                                     paddingRight: '16px',
                                     paddingTop: '4px',
                                     paddingBottom: '4px',
-                                    fontSize: '12px',
-                                    lineHeight: '20px',
+                                    fontSize: '15px',
+                                    lineHeight: '24px',
                                     border: 'none',
                                     margin: '0',
                                     boxSizing: 'border-box'
@@ -377,12 +377,12 @@ const TextDiffTool: React.FC = () => {
                                 onScroll={() => handleScroll('right')}
                                 className="w-full h-full resize-none bg-transparent text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-gray-400 dark:placeholder:text-gray-500 font-mono min-h-[500px] relative z-10"
                                 style={{
-                                    paddingLeft: '52px',
+                                    paddingLeft: '44px',
                                     paddingRight: '16px',
                                     paddingTop: '4px',
                                     paddingBottom: '4px',
-                                    fontSize: '12px',
-                                    lineHeight: '20px',
+                                    fontSize: '14px',
+                                    lineHeight: '24px',
                                     border: 'none',
                                     margin: '0',
                                     boxSizing: 'border-box'
