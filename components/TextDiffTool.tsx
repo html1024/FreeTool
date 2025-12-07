@@ -298,7 +298,7 @@ const TextDiffTool: React.FC = () => {
     }, [diffResult]);
 
     return (
-        <div className="flex w-full flex-col items-center px-4 sm:px-6 lg:px-8">
+        <div className="flex w-full flex-col items-center px-4 py-10 sm:px-6 lg:px-8">
             <div className="flex w-full max-w-7xl flex-col items-center gap-2 text-center mb-8">
                 <p className="text-3xl font-black leading-tight tracking-tighter text-gray-900 dark:text-white sm:text-4xl">文本差异对比</p>
                 <p className="text-base font-normal text-gray-500 dark:text-gray-400">对比两段文本的差异，支持直接编辑、上传文件或 Word 文档。</p>
@@ -426,7 +426,7 @@ const TextDiffTool: React.FC = () => {
                     {/* 编辑器主体 - 带差异高亮 */}
                     <div className="grid grid-cols-2">
                         {/* 左侧编辑器 */}
-                        <div className="border-r border-gray-200 dark:border-gray-700/50 relative overflow-hidden flex" style={{ height: '600px' }}>
+                        <div className="border-r border-gray-200 dark:border-gray-700/50 relative overflow-hidden flex" style={{ height: '500px' }}>
                             {/* 行号层 - 固定在左侧 */}
                             <div
                                 ref={leftLineNumberRef}
@@ -492,7 +492,7 @@ const TextDiffTool: React.FC = () => {
                         </div>
 
                         {/* 右侧编辑器 */}
-                        <div className="relative overflow-hidden flex" style={{ height: '600px' }}>
+                        <div className="relative overflow-hidden flex" style={{ height: '500px' }}>
                             {/* 行号层 - 固定在左侧 */}
                             <div
                                 ref={rightLineNumberRef}
