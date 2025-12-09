@@ -20,6 +20,9 @@
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.0.0",
+    "gif.js": "^0.2.0",
+    "highlight.js": "^11.9.0",
+    "katex": "^0.16.9",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }

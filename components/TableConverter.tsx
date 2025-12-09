@@ -27,7 +27,7 @@ const loadDataGridXLScript = () =>
             return;
         }
         const script = document.createElement('script');
-        script.src = 'https://code.datagridxl.com/datagridxl2.js';
+        script.src = '/libs/datagridxl/datagridxl2.js';
         script.async = true;
         script.onload = () => resolve();
         script.onerror = () => reject(new Error('load_failed'));
@@ -102,7 +102,23 @@ const TableConverter: React.FC = () => {
             });
 
         const mountGrid = async () => {
-            if (!gridContainerRef.current) return;
+            if (!gridContainerRef.current) {
+                // 如果容器还没准备好，等待一下
+                await new Promise(resolve => setTimeout(resolve, 100));
+                if (!gridContainerRef.current) {
+                    return;
+                }
+            }
+
+            const container = gridContainerRef.current;
+
+            // 等待容器有实际尺寸
+            let retries = 0;
+            while ((container.offsetWidth === 0 || container.offsetHeight === 0) && retries < 10) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                retries++;
+            }
+
             setGridStatus('loading');
 
             try {
@@ -117,8 +133,8 @@ const TableConverter: React.FC = () => {
 
             if (disposed || !gridContainerRef.current || !window.DataGridXL) return;
 
-            const container = gridContainerRef.current;
             if (!container.id) container.id = 'dgxl-table-grid';
+
             const grid = new window.DataGridXL(container.id, {
                 data: latestDataRef.current.map(row => [...row]),
                 colHeaderLabelType: 'letters',
@@ -137,15 +153,26 @@ const TableConverter: React.FC = () => {
             setGridStatus('ready');
 
             const syncFromGrid = (eventData?: any) => {
-                if (grid.getData) {
-                    const snapshot = grid.getData();
-                    if (!Array.isArray(snapshot)) return;
-                    setTableData(
-                        snapshot.map(row => row.map(cell => sanitizeCell(cell == null ? '' : String(cell))))
-                    );
-                    return;
+                // 尝试使用 getData 方法获取完整数据
+                if (grid.getData && typeof grid.getData === 'function') {
+                    try {
+                        const snapshot = grid.getData();
+                        if (Array.isArray(snapshot)) {
+                            setTableData(
+                                snapshot.map(row =>
+                                    Array.isArray(row)
+                                        ? row.map(cell => sanitizeCell(cell == null ? '' : String(cell)))
+                                        : []
+                                )
+                            );
+                            return;
+                        }
+                    } catch (error) {
+                        // 静默处理错误
+                    }
                 }
 
+                // 如果没有 getData 方法，尝试从事件数据中更新
                 if (!eventData) return;
                 const { rowIds = [], colIds = [], values = [] } = eventData;
                 setTableData(prev => {
@@ -163,13 +190,28 @@ const TableConverter: React.FC = () => {
                 });
             };
 
-            const debouncedSync = debounce(syncFromGrid, 300);
+            // 减少防抖延迟到 100ms，使响应更快
+            const debouncedSync = debounce(syncFromGrid, 100);
+
+            // DataGridXL v2 事件监听
+            // 监听所有可能的数据变更事件
+            grid.events.on('cellvaluechange', debouncedSync);
+            grid.events.on('change', debouncedSync);
+            grid.events.on('afterchange', debouncedSync);
             grid.events.on('$setcellvaluesbatch', debouncedSync);
             grid.events.on('$fillcells', debouncedSync);
             grid.events.on('$clearcells', debouncedSync);
-            grid.events.on('ready', syncFromGrid);
-            grid.events.on('cellvaluechange', debouncedSync);
             grid.events.on('documentchange', debouncedSync);
+            grid.events.on('ready', () => {
+                syncFromGrid();
+            });
+
+            // 延迟一小段时间后强制同步一次，确保初始数据显示
+            setTimeout(() => {
+                if (!disposed && gridInstanceRef.current) {
+                    syncFromGrid();
+                }
+            }, 200);
         };
 
         mountGrid();
