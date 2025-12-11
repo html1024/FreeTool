@@ -1,9 +1,4 @@
-// Import Highlight.js types
-declare global {
-    interface Window {
-        hljs: any;
-    }
-}
+import { loadHighlightJs } from '../utils/loadHighlightJs';
 
 // Language mapping from display names to Highlight.js language identifiers
 const LANGUAGE_MAP: Record<string, string> = {
@@ -23,6 +18,9 @@ const LANGUAGE_MAP: Record<string, string> = {
 };
 
 export async function highlightCode(code: string, language: string): Promise<string> {
+    // 按需加载 Highlight.js
+    await loadHighlightJs();
+
     // Ensure Highlight.js is loaded
     if (!window.hljs) {
         throw new Error("Highlight.js 未加载。请刷新页面重试。");

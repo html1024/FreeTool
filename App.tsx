@@ -1,20 +1,22 @@
-import React, { useState } from 'react';
-import TranslateTool from './components/TranslateTool';
-import ImageConverterTool from './components/ImageConverterTool';
-import ImageEditorTool from './components/ImageEditorTool';
-import ImageComparisonTool from './components/ImageComparisonTool';
-import PhotoCollageTool from './components/PhotoCollageTool';
-import CodeHighlightTool from './components/CodeHighlightTool';
-import TextFormatterTool from './components/TextFormatterTool';
-import JsonFormatterTool from './components/JsonFormatterTool';
-import XmlFormatterTool from './components/XmlFormatterTool';
-import MathFormulaEditor from './components/MathFormulaEditor';
-import TableConverter from './components/TableConverter';
-import VideoAspectConverter from './components/VideoAspectConverter';
-import TextDiffTool from './components/TextDiffTool';
-import PdfToPptTool from './components/PdfToPptTool';
-import PromptGeneratorTool from './components/PromptGeneratorTool';
+import React, { useState, lazy, Suspense } from 'react';
 import BottomNavBar from './components/BottomNavBar';
+
+// 懒加载组件 - 提升首屏加载速度
+const TranslateTool = lazy(() => import('./components/TranslateTool'));
+const ImageConverterTool = lazy(() => import('./components/ImageConverterTool'));
+const ImageEditorTool = lazy(() => import('./components/ImageEditorTool'));
+const ImageComparisonTool = lazy(() => import('./components/ImageComparisonTool'));
+const PhotoCollageTool = lazy(() => import('./components/PhotoCollageTool'));
+const CodeHighlightTool = lazy(() => import('./components/CodeHighlightTool'));
+const TextFormatterTool = lazy(() => import('./components/TextFormatterTool'));
+const JsonFormatterTool = lazy(() => import('./components/JsonFormatterTool'));
+const XmlFormatterTool = lazy(() => import('./components/XmlFormatterTool'));
+const MathFormulaEditor = lazy(() => import('./components/MathFormulaEditor'));
+const TableConverter = lazy(() => import('./components/TableConverter'));
+const VideoAspectConverter = lazy(() => import('./components/VideoAspectConverter'));
+const TextDiffTool = lazy(() => import('./components/TextDiffTool'));
+const PdfToPptTool = lazy(() => import('./components/PdfToPptTool'));
+const PromptGeneratorTool = lazy(() => import('./components/PromptGeneratorTool'));
 
 // 获取资源路径的辅助函数
 const getAssetUrl = (path: string) => {
@@ -145,16 +147,30 @@ const App: React.FC = () => {
 
     const ActiveComponent = TOOLS.find(tool => tool.id === activeTool)?.component || TranslateTool;
 
+    // 加载中组件
+    const LoadingFallback = () => (
+        <div className="flex w-full h-96 items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+                <div className="spinner" style={{ width: '32px', height: '32px', borderWidth: '3px' }}></div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">加载中...</p>
+            </div>
+        </div>
+    );
+
     return (
         <div className="relative flex min-h-screen w-full bg-gray-50 dark:bg-gray-900">
             <aside className="sticky top-0 h-screen w-64 flex-shrink-0 bg-gray-100 dark:bg-gray-800 border-r border-border-light dark:border-border-dark p-4 hidden md:flex flex-col">
                 <div className="flex h-full flex-col">
                     <div className="flex items-center gap-3 px-2 pb-4">
-                        <img
-                            src={getAssetUrl('logo.png')}
-                            alt="FreeTool Logo"
-                            className="w-10 h-10 rounded-lg object-cover"
-                        />
+                        <picture>
+                            <source srcSet={getAssetUrl('assets/logo.webp')} type="image/webp" />
+                            <img
+                                src={getAssetUrl('logo.png')}
+                                alt="FreeTool Logo"
+                                className="w-10 h-10 rounded-lg object-cover"
+                                loading="eager"
+                            />
+                        </picture>
                         <div className="flex flex-col">
                             <h1 className="text-gray-900 dark:text-gray-100 text-base font-medium leading-normal">FreeTool 工具箱</h1>
                             <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal">在线小工具</p>
@@ -208,7 +224,9 @@ const App: React.FC = () => {
             <BottomNavBar activeTool={activeTool} setActiveTool={setActiveTool} />
 
             <main className="flex-1 p-6 sm:p-8 md:p-10 pb-20">
-                <ActiveComponent />
+                <Suspense fallback={<LoadingFallback />}>
+                    <ActiveComponent />
+                </Suspense>
             </main>
 
             {/* 关于弹窗 */}
@@ -229,11 +247,27 @@ const App: React.FC = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <p className="mb-2"><strong>个人微信号：</strong></p>
-                                    <img src={getAssetUrl('assets/wechat.jpg')} alt="个人微信号" className="w-full h-auto object-contain rounded-lg border border-gray-200 dark:border-gray-700" />
+                                    <picture>
+                                        <source srcSet={getAssetUrl('assets/wechat.webp')} type="image/webp" />
+                                        <img
+                                            src={getAssetUrl('assets/wechat.jpg')}
+                                            alt="个人微信号"
+                                            className="w-full h-auto object-contain rounded-lg border border-gray-200 dark:border-gray-700"
+                                            loading="lazy"
+                                        />
+                                    </picture>
                                 </div>
                                 <div>
                                     <p className="mb-2"><strong>微信公众号：</strong>我有一计</p>
-                                    <img src={getAssetUrl('assets/media.jpg')} alt="微信公众号" className="w-full h-auto object-contain rounded-lg border border-gray-200 dark:border-gray-700" />
+                                    <picture>
+                                        <source srcSet={getAssetUrl('assets/media.webp')} type="image/webp" />
+                                        <img
+                                            src={getAssetUrl('assets/media.jpg')}
+                                            alt="微信公众号"
+                                            className="w-full h-auto object-contain rounded-lg border border-gray-200 dark:border-gray-700"
+                                            loading="lazy"
+                                        />
+                                    </picture>
                                 </div>
                             </div>
                             <p><strong>理念：</strong>致力于构建免费好用的产品</p>

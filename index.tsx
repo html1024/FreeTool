@@ -2,6 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { initWebVitals } from './utils/webVitals';
 
 // Handle dark mode
 if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -21,3 +22,8 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// 初始化 Web Vitals 性能监控
+if (process.env.NODE_ENV === 'production') {
+  initWebVitals();
+}
