@@ -43,10 +43,12 @@ const ImageComparisonTool: React.FC = () => {
     const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
     const [initialLayerPos, setInitialLayerPos] = useState<{ x: number; y: number } | null>(null);
     const [canvasSize, setCanvasSize] = useState({ width: 1200, height: 800 });
+    const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const loadedImagesRef = useRef<Map<string, HTMLImageElement>>(new Map());
+    const canvasContainerRef = useRef<HTMLDivElement>(null);
 
     // 绘制画布
     const drawCanvas = useCallback(() => {
@@ -196,6 +198,51 @@ const ImageComparisonTool: React.FC = () => {
         });
 
         e.target.value = '';
+    };
+
+    // 从 DataURL 添加图片（用于粘贴功能）
+    const addImageFromDataUrl = (dataUrl: string, index: number = 0) => {
+        const img = new Image();
+        img.onload = () => {
+            const maxCanvasWidth = canvasSize.width * 0.8;
+            const maxCanvasHeight = canvasSize.height * 0.8;
+
+            let displayWidth = img.width;
+            let displayHeight = img.height;
+            let scale = 1;
+
+            if (displayWidth > maxCanvasWidth || displayHeight > maxCanvasHeight) {
+                const widthScale = maxCanvasWidth / displayWidth;
+                const heightScale = maxCanvasHeight / displayHeight;
+                scale = Math.min(widthScale, heightScale);
+
+                displayWidth = img.width * scale;
+                displayHeight = img.height * scale;
+            }
+
+            const newLayer: Layer = {
+                id: Date.now().toString() + index,
+                type: 'image',
+                name: `粘贴图片 ${layers.length + index + 1}`,
+                src: dataUrl,
+                visible: true,
+                locked: false,
+                x: 50 + index * 30,
+                y: 50 + index * 30,
+                width: displayWidth,
+                height: displayHeight,
+                originalWidth: img.width,
+                originalHeight: img.height,
+                scale: scale,
+                rotation: 0,
+                opacity: 1,
+                zIndex: layers.length + index,
+            };
+
+            setLayers(prev => [...prev, newLayer]);
+            loadedImagesRef.current.set(newLayer.id, img);
+        };
+        img.src = dataUrl;
     };
 
     // 添加文本
@@ -419,6 +466,70 @@ const ImageComparisonTool: React.FC = () => {
         );
     };
 
+    // 处理粘贴事件
+    React.useEffect(() => {
+        const handlePaste = async (e: ClipboardEvent) => {
+            e.preventDefault();
+
+            const items = e.clipboardData?.items;
+            if (!items) return;
+
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+
+                // 检查是否是图片
+                if (item.type.indexOf('image') !== -1) {
+                    const blob = item.getAsFile();
+                    if (!blob) continue;
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const dataUrl = event.target?.result as string;
+                        addImageFromDataUrl(dataUrl, i);
+                    };
+                    reader.readAsDataURL(blob);
+                }
+            }
+        };
+
+        // 添加粘贴事件监听
+        document.addEventListener('paste', handlePaste);
+
+        return () => {
+            document.removeEventListener('paste', handlePaste);
+        };
+    }, [layers, canvasSize]);
+
+    // 全屏切换
+    const toggleFullscreen = async () => {
+        if (!canvasContainerRef.current) return;
+
+        try {
+            if (!document.fullscreenElement) {
+                await canvasContainerRef.current.requestFullscreen();
+                setIsFullscreen(true);
+            } else {
+                await document.exitFullscreen();
+                setIsFullscreen(false);
+            }
+        } catch (err) {
+            console.error('全屏切换失败:', err);
+        }
+    };
+
+    // 监听全屏变化
+    React.useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+        };
+    }, []);
+
     const selectedLayer = layers.find(l => l.id === selectedLayerId);
 
     return (
@@ -435,10 +546,20 @@ const ImageComparisonTool: React.FC = () => {
 
                 <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6 items-start">
                     {/* 左侧：画布区域 */}
-                    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark p-6 shadow-sm flex flex-col gap-4">
+                    <div ref={canvasContainerRef} className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark p-6 shadow-sm flex flex-col gap-4">
                         <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">画布</h3>
                             <div className="flex gap-2">
+                                <button
+                                    onClick={toggleFullscreen}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                    title={isFullscreen ? '退出全屏' : '全屏显示'}
+                                >
+                                    <span className="material-symbols-outlined text-base">
+                                        {isFullscreen ? 'fullscreen_exit' : 'fullscreen'}
+                                    </span>
+                                    {isFullscreen ? '退出全屏' : '全屏'}
+                                </button>
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
                                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-white text-sm font-medium hover:opacity-90"
@@ -465,7 +586,12 @@ const ImageComparisonTool: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4 overflow-auto">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                            <span className="material-symbols-outlined text-sm">info</span>
+                            提示：按 Ctrl/Cmd+V 可直接粘贴图片
+                        </div>
+
+                        <div className={`flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4 overflow-auto ${isFullscreen ? 'h-screen' : ''}`}>
                             <canvas
                                 ref={canvasRef}
                                 width={canvasSize.width}
@@ -474,7 +600,7 @@ const ImageComparisonTool: React.FC = () => {
                                 onMouseMove={handleMouseMove}
                                 onMouseUp={handleMouseUp}
                                 onMouseLeave={handleMouseUp}
-                                className="max-w-full max-h-[600px] cursor-move shadow-lg"
+                                className={`cursor-move shadow-lg ${isFullscreen ? 'max-w-full max-h-full' : 'max-w-full max-h-[600px]'}`}
                             />
                         </div>
 
