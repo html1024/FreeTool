@@ -17,6 +17,7 @@ const TableConverter = lazy(() => import('./components/TableConverter'));
 const VideoAspectConverter = lazy(() => import('./components/VideoAspectConverter'));
 const TextDiffTool = lazy(() => import('./components/TextDiffTool'));
 const PdfToPptTool = lazy(() => import('./components/PdfToPptTool'));
+const PdfToImageTool = lazy(() => import('./components/PdfToImageTool'));
 const PromptGeneratorTool = lazy(() => import('./components/PromptGeneratorTool'));
 
 // 获取资源路径的辅助函数
@@ -44,6 +45,7 @@ type ToolType =
     | 'video-aspect-converter'
     | 'text-diff'
     | 'pdf-to-ppt'
+    | 'pdf-to-image'
     | 'prompt-generator';
 
 type CategoryType = 'text' | 'image' | 'data' | 'media' | 'ai';
@@ -112,6 +114,7 @@ const TOOL_CATEGORIES: ToolCategory[] = [
         tools: [
             { id: 'video-aspect-converter', name: '视频比例转换', icon: 'aspect_ratio', component: VideoAspectConverter },
             { id: 'pdf-to-ppt', name: 'PDF转PPT', icon: 'slideshow', component: PdfToPptTool },
+            { id: 'pdf-to-image', name: 'PDF转长图', icon: 'photo_library', component: PdfToImageTool },
         ],
     },
     {

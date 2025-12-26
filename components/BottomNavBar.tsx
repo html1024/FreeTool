@@ -16,6 +16,7 @@ type ToolType =
     | 'video-aspect-converter'
     | 'text-diff'
     | 'pdf-to-ppt'
+    | 'pdf-to-image'
     | 'prompt-generator';
 
 interface Tool {
@@ -82,8 +83,13 @@ const TOOLS: Tool[] = [
     },
     {
         id: 'pdf-to-ppt',
-        name: 'PDF',
+        name: 'PPT',
         icon: 'slideshow',
+    },
+    {
+        id: 'pdf-to-image',
+        name: '长图',
+        icon: 'photo_library',
     },
     {
         id: 'prompt-generator',
