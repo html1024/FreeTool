@@ -17,6 +17,7 @@ type ToolType =
     | 'text-diff'
     | 'pdf-to-ppt'
     | 'pdf-to-image'
+    | 'resume-generator'
     | 'prompt-generator';
 
 interface Tool {
@@ -90,6 +91,11 @@ const TOOLS: Tool[] = [
         id: 'pdf-to-image',
         name: '长图',
         icon: 'photo_library',
+    },
+    {
+        id: 'resume-generator',
+        name: '简历',
+        icon: 'description',
     },
     {
         id: 'prompt-generator',

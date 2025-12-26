@@ -18,6 +18,7 @@ const VideoAspectConverter = lazy(() => import('./components/VideoAspectConverte
 const TextDiffTool = lazy(() => import('./components/TextDiffTool'));
 const PdfToPptTool = lazy(() => import('./components/PdfToPptTool'));
 const PdfToImageTool = lazy(() => import('./components/PdfToImageTool'));
+const ResumeGeneratorTool = lazy(() => import('./components/ResumeGeneratorTool'));
 const PromptGeneratorTool = lazy(() => import('./components/PromptGeneratorTool'));
 
 // 获取资源路径的辅助函数
@@ -46,6 +47,7 @@ type ToolType =
     | 'text-diff'
     | 'pdf-to-ppt'
     | 'pdf-to-image'
+    | 'resume-generator'
     | 'prompt-generator';
 
 type CategoryType = 'text' | 'image' | 'data' | 'media' | 'ai';
@@ -122,6 +124,7 @@ const TOOL_CATEGORIES: ToolCategory[] = [
         name: '其它工具',
         icon: 'smart_toy',
         tools: [
+            { id: 'resume-generator', name: '简历生成器', icon: 'description', component: ResumeGeneratorTool },
             { id: 'prompt-generator', name: '提示词生成器', icon: 'psychology', component: PromptGeneratorTool },
         ],
     },
