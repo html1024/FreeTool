@@ -1,4 +1,37 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import {
+    Document,
+    Page,
+    View,
+    Text,
+    StyleSheet,
+    Font,
+    pdf,
+    Svg,
+    Path,
+} from '@react-pdf/renderer';
+
+// 注册中文字体 - 使用 Noto Sans SC
+Font.register({
+    family: 'NotoSansSC',
+    fonts: [
+        {
+            src: 'https://fonts.gstatic.com/s/notosanssc/v39/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG9_FnYw.ttf',
+            fontWeight: 'normal'
+        },
+        {
+            src: 'https://fonts.gstatic.com/s/notosanssc/v39/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaGzjCnYw.ttf',
+            fontWeight: 'bold'
+        },
+    ],
+});
+
+// 禁用连字符断词
+Font.registerHyphenationCallback(word => [word]);
+
+// A4 尺寸（pt）
+const A4_WIDTH_PT = 595;
+const A4_HEIGHT_PT = 842;
 
 // 简历数据类型
 interface PersonalInfo {
@@ -46,8 +79,6 @@ interface ResumeData {
     skills: { category: string; items: string }[];
     projects: Project[];
 }
-
-type SectionType = 'personal' | 'education' | 'experience' | 'projects' | 'skills';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -136,18 +167,474 @@ const sampleResumeData: ResumeData = {
     ],
 };
 
+type SectionType = 'personal' | 'education' | 'experience' | 'projects' | 'skills';
+
+// PDF 样式
+const createPdfStyles = (themeColor: string, fontSize: number) => StyleSheet.create({
+    page: {
+        fontFamily: 'NotoSansSC',
+        fontSize: fontSize,
+        paddingTop: 40,
+        paddingBottom: 40,
+        paddingLeft: 50,
+        paddingRight: 50,
+        backgroundColor: '#ffffff',
+    },
+    header: {
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+    name: {
+        fontSize: fontSize + 10,
+        fontWeight: 'bold',
+        color: '#1a1a1a',
+        marginBottom: 2,
+    },
+    title: {
+        fontSize: fontSize,
+        color: '#666666',
+        marginBottom: 6,
+    },
+    contactRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        flexWrap: 'wrap',
+        gap: 12,
+        marginBottom: 4,
+    },
+    contactItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 3,
+        fontSize: fontSize - 1,
+        color: '#555555',
+    },
+    summary: {
+        fontSize: fontSize - 1,
+        color: '#444444',
+        lineHeight: 1.5,
+        textAlign: 'justify',
+        marginTop: 8,
+    },
+    section: {
+        marginBottom: 10,
+    },
+    sectionTitle: {
+        fontSize: fontSize,
+        fontWeight: 'bold',
+        color: themeColor,
+        borderBottomWidth: 1.5,
+        borderBottomColor: themeColor,
+        paddingBottom: 3,
+        marginBottom: 8,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+    },
+    entryContainer: {
+        marginBottom: 8,
+    },
+    entryHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'baseline',
+        marginBottom: 1,
+    },
+    entryTitle: {
+        fontSize: fontSize - 1,
+        fontWeight: 'bold',
+        color: '#1a1a1a',
+    },
+    entryDate: {
+        fontSize: fontSize - 2,
+        color: '#888888',
+    },
+    entrySubtitle: {
+        fontSize: fontSize - 2,
+        color: '#666666',
+        marginBottom: 3,
+    },
+    bulletList: {
+        paddingLeft: 12,
+    },
+    bulletItem: {
+        flexDirection: 'row',
+        marginBottom: 1,
+    },
+    bullet: {
+        width: 8,
+        fontSize: fontSize - 1,
+        color: '#666666',
+    },
+    bulletText: {
+        flex: 1,
+        fontSize: fontSize - 1,
+        color: '#444444',
+        lineHeight: 1.4,
+    },
+    skillRow: {
+        flexDirection: 'row',
+        marginBottom: 4,
+    },
+    skillCategory: {
+        fontWeight: 'bold',
+        color: '#1a1a1a',
+        fontSize: fontSize - 1,
+    },
+    skillItems: {
+        color: '#444444',
+        fontSize: fontSize - 1,
+        flex: 1,
+    },
+});
+
+// PDF 图标组件
+const PdfPhoneIcon = () => (
+    <Svg width="10" height="10" viewBox="0 0 24 24">
+        <Path fill="#555555" d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
+    </Svg>
+);
+
+const PdfEmailIcon = () => (
+    <Svg width="10" height="10" viewBox="0 0 24 24">
+        <Path fill="#555555" d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+    </Svg>
+);
+
+const PdfLocationIcon = () => (
+    <Svg width="10" height="10" viewBox="0 0 24 24">
+        <Path fill="#555555" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+    </Svg>
+);
+
+const PdfWebsiteIcon = () => (
+    <Svg width="10" height="10" viewBox="0 0 24 24">
+        <Path fill="#555555" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+    </Svg>
+);
+
+// Resume PDF 文档组件（用于导出）
+interface ResumePDFProps {
+    resumeData: ResumeData;
+    themeColor: string;
+    fontSize: number;
+}
+
+const ResumePDFDocument: React.FC<ResumePDFProps> = ({ resumeData, themeColor, fontSize }) => {
+    const styles = createPdfStyles(themeColor, fontSize);
+    const { personal, education, experience, projects, skills } = resumeData;
+
+    return (
+        <Document>
+            <Page size="A4" style={styles.page}>
+                {/* 头部信息 */}
+                <View style={styles.header}>
+                    <Text style={styles.name}>{personal.name || '您的姓名'}</Text>
+                    {personal.title && <Text style={styles.title}>{personal.title}</Text>}
+                    <View style={styles.contactRow}>
+                        {personal.phone && (
+                            <View style={styles.contactItem}>
+                                <PdfPhoneIcon />
+                                <Text>{personal.phone}</Text>
+                            </View>
+                        )}
+                        {personal.email && (
+                            <View style={styles.contactItem}>
+                                <PdfEmailIcon />
+                                <Text>{personal.email}</Text>
+                            </View>
+                        )}
+                        {personal.location && (
+                            <View style={styles.contactItem}>
+                                <PdfLocationIcon />
+                                <Text>{personal.location}</Text>
+                            </View>
+                        )}
+                        {personal.website && (
+                            <View style={styles.contactItem}>
+                                <PdfWebsiteIcon />
+                                <Text>{personal.website}</Text>
+                            </View>
+                        )}
+                    </View>
+                    {personal.summary && <Text style={styles.summary}>{personal.summary}</Text>}
+                </View>
+
+                {/* 教育经历 */}
+                {education.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>教育经历</Text>
+                        {education.map((edu) => (
+                            <View key={edu.id} style={styles.entryContainer}>
+                                <View style={styles.entryHeader}>
+                                    <Text style={styles.entryTitle}>{edu.school}</Text>
+                                    <Text style={styles.entryDate}>{edu.startDate} - {edu.endDate}</Text>
+                                </View>
+                                <Text style={styles.entrySubtitle}>
+                                    {[edu.degree, edu.major, edu.gpa].filter(Boolean).join(' | ')}
+                                </Text>
+                                {edu.descriptions.filter(d => d.trim()).length > 0 && (
+                                    <View style={styles.bulletList}>
+                                        {edu.descriptions.filter(d => d.trim()).map((desc, i) => (
+                                            <View key={i} style={styles.bulletItem}>
+                                                <Text style={styles.bullet}>•</Text>
+                                                <Text style={styles.bulletText}>{desc}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                )}
+                            </View>
+                        ))}
+                    </View>
+                )}
+
+                {/* 工作经验 */}
+                {experience.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>工作经验</Text>
+                        {experience.map((exp) => (
+                            <View key={exp.id} style={styles.entryContainer}>
+                                <View style={styles.entryHeader}>
+                                    <Text style={styles.entryTitle}>{exp.company}</Text>
+                                    <Text style={styles.entryDate}>{exp.startDate} - {exp.endDate}</Text>
+                                </View>
+                                <Text style={styles.entrySubtitle}>
+                                    {[exp.position, exp.location].filter(Boolean).join(' | ')}
+                                </Text>
+                                {exp.descriptions.filter(d => d.trim()).length > 0 && (
+                                    <View style={styles.bulletList}>
+                                        {exp.descriptions.filter(d => d.trim()).map((desc, i) => (
+                                            <View key={i} style={styles.bulletItem}>
+                                                <Text style={styles.bullet}>•</Text>
+                                                <Text style={styles.bulletText}>{desc}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                )}
+                            </View>
+                        ))}
+                    </View>
+                )}
+
+                {/* 项目经历 */}
+                {projects.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>项目经历</Text>
+                        {projects.map((proj) => (
+                            <View key={proj.id} style={styles.entryContainer}>
+                                <View style={styles.entryHeader}>
+                                    <Text style={styles.entryTitle}>{proj.name}</Text>
+                                    <Text style={styles.entryDate}>{proj.date}</Text>
+                                </View>
+                                {proj.descriptions.filter(d => d.trim()).length > 0 && (
+                                    <View style={styles.bulletList}>
+                                        {proj.descriptions.filter(d => d.trim()).map((desc, i) => (
+                                            <View key={i} style={styles.bulletItem}>
+                                                <Text style={styles.bullet}>•</Text>
+                                                <Text style={styles.bulletText}>{desc}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                )}
+                            </View>
+                        ))}
+                    </View>
+                )}
+
+                {/* 专业技能 */}
+                {skills.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>专业技能</Text>
+                        {skills.map((skill, idx) => (
+                            <View key={idx} style={styles.skillRow}>
+                                <Text style={styles.skillCategory}>{skill.category}：</Text>
+                                <Text style={styles.skillItems}>{skill.items}</Text>
+                            </View>
+                        ))}
+                    </View>
+                )}
+            </Page>
+        </Document>
+    );
+};
+
+// HTML 预览组件（实时更新，无 PDF 工具栏）
+interface ResumePreviewProps {
+    resumeData: ResumeData;
+    themeColor: string;
+    fontSize: number;
+}
+
+const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, themeColor, fontSize }) => {
+    const { personal, education, experience, projects, skills } = resumeData;
+
+    const sectionTitleStyle: React.CSSProperties = {
+        fontSize: `${fontSize}pt`,
+        fontWeight: 700,
+        color: themeColor,
+        borderBottom: `1.5px solid ${themeColor}`,
+        paddingBottom: '3px',
+        marginBottom: '8px',
+        textTransform: 'uppercase',
+        letterSpacing: '1px',
+    };
+
+    return (
+        <div
+            style={{
+                fontFamily: '"Noto Sans SC", "Microsoft YaHei", sans-serif',
+                fontSize: `${fontSize}pt`,
+                padding: '40px 50px',
+                backgroundColor: '#ffffff',
+                color: '#1a1a1a',
+                lineHeight: 1.4,
+            }}
+        >
+            {/* 头部信息 */}
+            <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+                <div style={{ fontSize: `${fontSize + 10}pt`, fontWeight: 700, color: '#1a1a1a', marginBottom: '2px' }}>
+                    {personal.name || '您的姓名'}
+                </div>
+                {personal.title && (
+                    <div style={{ fontSize: `${fontSize}pt`, color: '#666666', marginBottom: '6px' }}>
+                        {personal.title}
+                    </div>
+                )}
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '12px', marginBottom: '4px' }}>
+                    {personal.phone && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: `${fontSize - 1}pt`, color: '#555555' }}>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="#555555"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                            {personal.phone}
+                        </span>
+                    )}
+                    {personal.email && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: `${fontSize - 1}pt`, color: '#555555' }}>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="#555555"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                            {personal.email}
+                        </span>
+                    )}
+                    {personal.location && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: `${fontSize - 1}pt`, color: '#555555' }}>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="#555555"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                            {personal.location}
+                        </span>
+                    )}
+                    {personal.website && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: `${fontSize - 1}pt`, color: '#555555' }}>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="#555555"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                            {personal.website}
+                        </span>
+                    )}
+                </div>
+                {personal.summary && (
+                    <div style={{ fontSize: `${fontSize - 1}pt`, color: '#444444', lineHeight: 1.5, textAlign: 'justify', marginTop: '8px' }}>
+                        {personal.summary}
+                    </div>
+                )}
+            </div>
+
+            {/* 教育经历 */}
+            {education.length > 0 && (
+                <div style={{ marginBottom: '10px' }}>
+                    <div style={sectionTitleStyle}>教育经历</div>
+                    {education.map((edu) => (
+                        <div key={edu.id} style={{ marginBottom: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1px' }}>
+                                <span style={{ fontSize: `${fontSize - 1}pt`, fontWeight: 600, color: '#1a1a1a' }}>{edu.school}</span>
+                                <span style={{ fontSize: `${fontSize - 2}pt`, color: '#888888' }}>{edu.startDate} - {edu.endDate}</span>
+                            </div>
+                            <div style={{ fontSize: `${fontSize - 2}pt`, color: '#666666', marginBottom: '3px' }}>
+                                {[edu.degree, edu.major, edu.gpa].filter(Boolean).join(' | ')}
+                            </div>
+                            {edu.descriptions.filter(d => d.trim()).length > 0 && (
+                                <div style={{ paddingLeft: '12px' }}>
+                                    {edu.descriptions.filter(d => d.trim()).map((desc, i) => (
+                                        <div key={i} style={{ fontSize: `${fontSize - 1}pt`, color: '#444444', lineHeight: 1.4, marginBottom: '1px', display: 'flex' }}>
+                                            <span style={{ width: '8px', color: '#666666' }}>•</span>
+                                            <span style={{ flex: 1 }}>{desc}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* 工作经验 */}
+            {experience.length > 0 && (
+                <div style={{ marginBottom: '10px' }}>
+                    <div style={sectionTitleStyle}>工作经验</div>
+                    {experience.map((exp) => (
+                        <div key={exp.id} style={{ marginBottom: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1px' }}>
+                                <span style={{ fontSize: `${fontSize - 1}pt`, fontWeight: 600, color: '#1a1a1a' }}>{exp.company}</span>
+                                <span style={{ fontSize: `${fontSize - 2}pt`, color: '#888888' }}>{exp.startDate} - {exp.endDate}</span>
+                            </div>
+                            <div style={{ fontSize: `${fontSize - 2}pt`, color: '#666666', marginBottom: '3px' }}>
+                                {[exp.position, exp.location].filter(Boolean).join(' | ')}
+                            </div>
+                            {exp.descriptions.filter(d => d.trim()).length > 0 && (
+                                <div style={{ paddingLeft: '12px' }}>
+                                    {exp.descriptions.filter(d => d.trim()).map((desc, i) => (
+                                        <div key={i} style={{ fontSize: `${fontSize - 1}pt`, color: '#444444', lineHeight: 1.4, marginBottom: '1px', display: 'flex' }}>
+                                            <span style={{ width: '8px', color: '#666666' }}>•</span>
+                                            <span style={{ flex: 1 }}>{desc}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* 项目经历 */}
+            {projects.length > 0 && (
+                <div style={{ marginBottom: '10px' }}>
+                    <div style={sectionTitleStyle}>项目经历</div>
+                    {projects.map((proj) => (
+                        <div key={proj.id} style={{ marginBottom: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1px' }}>
+                                <span style={{ fontSize: `${fontSize - 1}pt`, fontWeight: 600, color: '#1a1a1a' }}>{proj.name}</span>
+                                <span style={{ fontSize: `${fontSize - 2}pt`, color: '#888888' }}>{proj.date}</span>
+                            </div>
+                            {proj.descriptions.filter(d => d.trim()).length > 0 && (
+                                <div style={{ paddingLeft: '12px' }}>
+                                    {proj.descriptions.filter(d => d.trim()).map((desc, i) => (
+                                        <div key={i} style={{ fontSize: `${fontSize - 1}pt`, color: '#444444', lineHeight: 1.4, marginBottom: '1px', display: 'flex' }}>
+                                            <span style={{ width: '8px', color: '#666666' }}>•</span>
+                                            <span style={{ flex: 1 }}>{desc}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* 专业技能 */}
+            {skills.length > 0 && (
+                <div style={{ marginBottom: '10px' }}>
+                    <div style={sectionTitleStyle}>专业技能</div>
+                    {skills.map((skill, idx) => (
+                        <div key={idx} style={{ display: 'flex', marginBottom: '4px', fontSize: `${fontSize - 1}pt` }}>
+                            <span style={{ fontWeight: 600, color: '#1a1a1a' }}>{skill.category}：</span>
+                            <span style={{ color: '#444444', flex: 1 }}>{skill.items}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 const ResumeGeneratorTool: React.FC = () => {
     const [resumeData, setResumeData] = useState<ResumeData>(defaultResumeData);
     const [activeSection, setActiveSection] = useState<SectionType>('personal');
     const [themeColor, setThemeColor] = useState('#0ea5e9');
-    const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>('medium');
-    const resumeRef = useRef<HTMLDivElement>(null);
-
-    const fontSizeMap = {
-        small: { name: '18px', title: '10px', section: '10px', body: '9px', contact: '8px' },
-        medium: { name: '20px', title: '11px', section: '11px', body: '10px', contact: '9px' },
-        large: { name: '22px', title: '12px', section: '12px', body: '11px', contact: '10px' },
-    };
+    const [bodyFontSize, setBodyFontSize] = useState(11);
+    const [isExporting, setIsExporting] = useState(false);
 
     // 加载示例数据
     const loadSampleData = useCallback(() => {
@@ -286,92 +773,26 @@ const ResumeGeneratorTool: React.FC = () => {
     }, []);
 
     // 导出 PDF
-    const handleExport = useCallback(() => {
-        const printContent = resumeRef.current;
-        if (!printContent) return;
-
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) {
-            alert('请允许弹出窗口以导出简历');
-            return;
+    const handleExport = useCallback(async () => {
+        setIsExporting(true);
+        try {
+            const doc = <ResumePDFDocument resumeData={resumeData} themeColor={themeColor} fontSize={bodyFontSize} />;
+            const blob = await pdf(doc).toBlob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = resumeData.personal.name ? `${resumeData.personal.name}_简历.pdf` : '简历.pdf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('PDF 导出失败:', error);
+            alert('PDF 导出失败，请重试');
+        } finally {
+            setIsExporting(false);
         }
-
-        // 导出时使用更大的字号
-        const exportFonts = {
-            small: { name: '24px', title: '12px', section: '13px', body: '11px', contact: '10px' },
-            medium: { name: '28px', title: '14px', section: '14px', body: '12px', contact: '11px' },
-            large: { name: '32px', title: '16px', section: '15px', body: '13px', contact: '12px' },
-        }[fontSize];
-
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>${resumeData.personal.name || '简历'}</title>
-                <style>
-                    * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body {
-                        font-family: "Microsoft YaHei", "SimSun", -apple-system, BlinkMacSystemFont, sans-serif;
-                        -webkit-print-color-adjust: exact;
-                        print-color-adjust: exact;
-                    }
-                    @page { size: A4; margin: 0; }
-                    .resume {
-                        width: 210mm;
-                        min-height: 297mm;
-                        padding: 15mm 20mm;
-                        background: white;
-                    }
-                    .header { text-align: center; margin-bottom: 20px; }
-                    .name { font-size: ${exportFonts.name}; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
-                    .title { font-size: ${exportFonts.title}; color: #666; margin-bottom: 10px; }
-                    .contact { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; font-size: ${exportFonts.contact}; color: #555; }
-                    .contact-item { display: flex; align-items: center; gap: 4px; }
-                    .summary { font-size: ${exportFonts.body}; color: #444; line-height: 1.6; text-align: justify; margin-top: 14px; }
-                    .section { margin-bottom: 16px; }
-                    .section-title {
-                        font-size: ${exportFonts.section};
-                        font-weight: 700;
-                        color: ${themeColor};
-                        border-bottom: 2px solid ${themeColor};
-                        padding-bottom: 4px;
-                        margin-bottom: 12px;
-                        text-transform: uppercase;
-                        letter-spacing: 1px;
-                    }
-                    .item { margin-bottom: 14px; }
-                    .item-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
-                    .item-title { font-size: ${exportFonts.body}; font-weight: 600; color: #1a1a1a; }
-                    .item-subtitle { font-size: ${exportFonts.body}; color: #555; }
-                    .item-date { font-size: ${exportFonts.contact}; color: #888; }
-                    .item-meta { font-size: ${exportFonts.contact}; color: #666; margin-bottom: 4px; }
-                    .descriptions { padding-left: 18px; }
-                    .desc-item {
-                        font-size: ${exportFonts.body};
-                        color: #444;
-                        line-height: 1.5;
-                        margin-bottom: 3px;
-                        position: relative;
-                    }
-                    .desc-item::before {
-                        content: "•";
-                        position: absolute;
-                        left: -14px;
-                        color: #666;
-                    }
-                    .skills-row { display: flex; margin-bottom: 8px; font-size: ${exportFonts.body}; }
-                    .skill-category { font-weight: 600; color: #1a1a1a; min-width: 90px; }
-                    .skill-items { color: #444; }
-                </style>
-            </head>
-            <body>
-                ${printContent.innerHTML}
-            </body>
-            </html>
-        `);
-        printWindow.document.close();
-        setTimeout(() => printWindow.print(), 250);
-    }, [fontSize, themeColor, resumeData.personal.name]);
+    }, [resumeData, themeColor, bodyFontSize]);
 
     const sections: { id: SectionType; name: string; icon: string }[] = [
         { id: 'personal', name: '基本信息', icon: 'person' },
@@ -380,8 +801,6 @@ const ResumeGeneratorTool: React.FC = () => {
         { id: 'projects', name: '项目经历', icon: 'folder' },
         { id: 'skills', name: '专业技能', icon: 'psychology' },
     ];
-
-    const fonts = fontSizeMap[fontSize];
 
     return (
         <div className="flex w-full flex-col items-center px-4 py-10 sm:px-6 lg:px-8">
@@ -415,39 +834,35 @@ const ResumeGeneratorTool: React.FC = () => {
                                 清空
                             </button>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4">
                             {/* 字号选择 */}
                             <div className="flex items-center gap-2">
                                 <span className="text-xs text-gray-500">字号</span>
-                                <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
-                                    {(['small', 'medium', 'large'] as const).map((size) => (
-                                        <button
-                                            key={size}
-                                            onClick={() => setFontSize(size)}
-                                            className={`px-2 py-1 text-xs ${
-                                                fontSize === size
-                                                    ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900'
-                                                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-                                            }`}
-                                        >
-                                            {size === 'small' ? '小' : size === 'medium' ? '中' : '大'}
-                                        </button>
-                                    ))}
-                                </div>
+                                <input
+                                    type="number"
+                                    min="8"
+                                    max="14"
+                                    value={bodyFontSize}
+                                    onChange={(e) => setBodyFontSize(Math.min(14, Math.max(8, parseInt(e.target.value) || 11)))}
+                                    className="w-14 px-2 py-1 text-xs text-center border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                                />
+                                <span className="text-xs text-gray-400">pt</span>
                             </div>
                             {/* 主题色 */}
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-2">
                                 <span className="text-xs text-gray-500">主题</span>
-                                {['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#1a1a1a'].map((color) => (
-                                    <button
-                                        key={color}
-                                        onClick={() => setThemeColor(color)}
-                                        className={`w-5 h-5 rounded-full transition-transform ${
-                                            themeColor === color ? 'scale-125 ring-2 ring-offset-1 ring-gray-300' : ''
-                                        }`}
-                                        style={{ backgroundColor: color }}
-                                    />
-                                ))}
+                                <div className="flex items-center gap-1.5">
+                                    {['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#1a1a1a'].map((color) => (
+                                        <button
+                                            key={color}
+                                            onClick={() => setThemeColor(color)}
+                                            className={`w-5 h-5 rounded-full transition-transform ${
+                                                themeColor === color ? 'scale-125 ring-2 ring-offset-1 ring-gray-300' : ''
+                                            }`}
+                                            style={{ backgroundColor: color }}
+                                        />
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -632,10 +1047,20 @@ const ResumeGeneratorTool: React.FC = () => {
                     {/* 导出按钮 */}
                     <button
                         onClick={handleExport}
-                        className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-semibold shadow-lg hover:opacity-90 transition-opacity"
+                        disabled={isExporting}
+                        className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-semibold shadow-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <span className="material-symbols-outlined">download</span>
-                        导出 PDF / 打印
+                        {isExporting ? (
+                            <>
+                                <div className="w-5 h-5 border-2 border-white dark:border-gray-900 border-t-transparent rounded-full animate-spin"></div>
+                                导出中...
+                            </>
+                        ) : (
+                            <>
+                                <span className="material-symbols-outlined">download</span>
+                                导出 PDF
+                            </>
+                        )}
                     </button>
                 </div>
 
@@ -645,161 +1070,28 @@ const ResumeGeneratorTool: React.FC = () => {
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">实时预览</span>
                         <span className="text-xs text-gray-500">A4</span>
                     </div>
-                    <div className="p-4">
+                    <div className="p-4 flex justify-center">
                         <div
-                            ref={resumeRef}
-                            className="bg-white shadow-xl mx-auto"
+                            className="bg-white shadow-xl overflow-hidden"
                             style={{
-                                aspectRatio: '210 / 297',
                                 width: '100%',
                                 maxWidth: '595px',
-                                padding: '32px 40px',
+                                aspectRatio: `${A4_WIDTH_PT} / ${A4_HEIGHT_PT}`,
                             }}
                         >
-                            {/* 头部 */}
-                            <div className="header" style={{ textAlign: 'center', marginBottom: '12px' }}>
-                                <div className="name" style={{ fontSize: fonts.name, fontWeight: 700, color: '#1a1a1a', marginBottom: '2px' }}>
-                                    {resumeData.personal.name || '您的姓名'}
-                                </div>
-                                {resumeData.personal.title && (
-                                    <div style={{ fontSize: fonts.title, color: '#666', marginBottom: '6px' }}>
-                                        {resumeData.personal.title}
-                                    </div>
-                                )}
-                                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '10px', fontSize: fonts.contact, color: '#555' }}>
-                                    {resumeData.personal.phone && (
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-                                            {resumeData.personal.phone}
-                                        </span>
-                                    )}
-                                    {resumeData.personal.email && (
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-                                            {resumeData.personal.email}
-                                        </span>
-                                    )}
-                                    {resumeData.personal.location && (
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                                            {resumeData.personal.location}
-                                        </span>
-                                    )}
-                                    {resumeData.personal.website && (
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-                                            {resumeData.personal.website}
-                                        </span>
-                                    )}
-                                </div>
-                                {resumeData.personal.summary && (
-                                    <div style={{ fontSize: fonts.body, color: '#444', lineHeight: 1.5, textAlign: 'justify', marginTop: '10px' }}>
-                                        {resumeData.personal.summary}
-                                    </div>
-                                )}
+                            <div
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    overflow: 'auto',
+                                }}
+                            >
+                                <ResumePreview
+                                    resumeData={resumeData}
+                                    themeColor={themeColor}
+                                    fontSize={bodyFontSize}
+                                />
                             </div>
-
-                            {/* 教育经历 */}
-                            {resumeData.education.length > 0 && (
-                                <div className="section" style={{ marginBottom: '12px' }}>
-                                    <div style={{ fontSize: fonts.section, fontWeight: 700, color: themeColor, borderBottom: `1.5px solid ${themeColor}`, paddingBottom: '3px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                        教育经历
-                                    </div>
-                                    {resumeData.education.map((edu) => (
-                                        <div key={edu.id} style={{ marginBottom: '10px' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1px' }}>
-                                                <span style={{ fontSize: fonts.body, fontWeight: 600, color: '#1a1a1a' }}>{edu.school}</span>
-                                                <span style={{ fontSize: fonts.contact, color: '#888' }}>{edu.startDate} - {edu.endDate}</span>
-                                            </div>
-                                            <div style={{ fontSize: fonts.contact, color: '#666', marginBottom: '3px' }}>
-                                                {[edu.degree, edu.major, edu.gpa].filter(Boolean).join(' | ')}
-                                            </div>
-                                            {edu.descriptions.filter(d => d.trim()).length > 0 && (
-                                                <div style={{ paddingLeft: '14px' }}>
-                                                    {edu.descriptions.filter(d => d.trim()).map((desc, i) => (
-                                                        <div key={i} style={{ fontSize: fonts.body, color: '#444', lineHeight: 1.4, marginBottom: '1px', position: 'relative' }}>
-                                                            <span style={{ position: 'absolute', left: '-10px', color: '#666' }}>•</span>
-                                                            {desc}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* 工作经验 */}
-                            {resumeData.experience.length > 0 && (
-                                <div className="section" style={{ marginBottom: '12px' }}>
-                                    <div style={{ fontSize: fonts.section, fontWeight: 700, color: themeColor, borderBottom: `1.5px solid ${themeColor}`, paddingBottom: '3px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                        工作经验
-                                    </div>
-                                    {resumeData.experience.map((exp) => (
-                                        <div key={exp.id} style={{ marginBottom: '10px' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1px' }}>
-                                                <span style={{ fontSize: fonts.body, fontWeight: 600, color: '#1a1a1a' }}>{exp.company}</span>
-                                                <span style={{ fontSize: fonts.contact, color: '#888' }}>{exp.startDate} - {exp.endDate}</span>
-                                            </div>
-                                            <div style={{ fontSize: fonts.contact, color: '#666', marginBottom: '3px' }}>
-                                                {[exp.position, exp.location].filter(Boolean).join(' | ')}
-                                            </div>
-                                            {exp.descriptions.filter(d => d.trim()).length > 0 && (
-                                                <div style={{ paddingLeft: '14px' }}>
-                                                    {exp.descriptions.filter(d => d.trim()).map((desc, i) => (
-                                                        <div key={i} style={{ fontSize: fonts.body, color: '#444', lineHeight: 1.4, marginBottom: '1px', position: 'relative' }}>
-                                                            <span style={{ position: 'absolute', left: '-10px', color: '#666' }}>•</span>
-                                                            {desc}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* 项目经历 */}
-                            {resumeData.projects.length > 0 && (
-                                <div className="section" style={{ marginBottom: '12px' }}>
-                                    <div style={{ fontSize: fonts.section, fontWeight: 700, color: themeColor, borderBottom: `1.5px solid ${themeColor}`, paddingBottom: '3px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                        项目经历
-                                    </div>
-                                    {resumeData.projects.map((proj) => (
-                                        <div key={proj.id} style={{ marginBottom: '10px' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1px' }}>
-                                                <span style={{ fontSize: fonts.body, fontWeight: 600, color: '#1a1a1a' }}>{proj.name}</span>
-                                                <span style={{ fontSize: fonts.contact, color: '#888' }}>{proj.date}</span>
-                                            </div>
-                                            {proj.descriptions.filter(d => d.trim()).length > 0 && (
-                                                <div style={{ paddingLeft: '14px' }}>
-                                                    {proj.descriptions.filter(d => d.trim()).map((desc, i) => (
-                                                        <div key={i} style={{ fontSize: fonts.body, color: '#444', lineHeight: 1.4, marginBottom: '1px', position: 'relative' }}>
-                                                            <span style={{ position: 'absolute', left: '-10px', color: '#666' }}>•</span>
-                                                            {desc}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* 专业技能 */}
-                            {resumeData.skills.length > 0 && (
-                                <div className="section" style={{ marginBottom: '12px' }}>
-                                    <div style={{ fontSize: fonts.section, fontWeight: 700, color: themeColor, borderBottom: `1.5px solid ${themeColor}`, paddingBottom: '3px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                        专业技能
-                                    </div>
-                                    {resumeData.skills.map((skill, idx) => (
-                                        <div key={idx} style={{ display: 'flex', marginBottom: '4px', fontSize: fonts.body }}>
-                                            <span style={{ fontWeight: 600, color: '#1a1a1a', minWidth: '70px' }}>{skill.category}：</span>
-                                            <span style={{ color: '#444' }}>{skill.items}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
