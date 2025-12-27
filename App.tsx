@@ -20,6 +20,7 @@ const PdfToPptTool = lazy(() => import('./components/PdfToPptTool'));
 const PdfToImageTool = lazy(() => import('./components/PdfToImageTool'));
 const ResumeGeneratorTool = lazy(() => import('./components/ResumeGeneratorTool'));
 const PromptGeneratorTool = lazy(() => import('./components/PromptGeneratorTool'));
+const MBTITestTool = lazy(() => import('./components/MBTITestTool'));
 
 // 获取资源路径的辅助函数
 const getAssetUrl = (path: string) => {
@@ -49,7 +50,8 @@ type ToolType =
     | 'pdf-to-ppt'
     | 'pdf-to-image'
     | 'resume-generator'
-    | 'prompt-generator';
+    | 'prompt-generator'
+    | 'mbti-test';
 
 type CategoryType = 'text' | 'image' | 'data' | 'media' | 'ai';
 
@@ -127,6 +129,7 @@ const TOOL_CATEGORIES: ToolCategory[] = [
         tools: [
             { id: 'resume-generator', name: '简历生成器', icon: 'description', component: ResumeGeneratorTool },
             { id: 'prompt-generator', name: '提示词生成器', icon: 'psychology', component: PromptGeneratorTool },
+            { id: 'mbti-test', name: 'MBTI人格测试', icon: 'mood', component: MBTITestTool },
         ],
     },
 ];

@@ -208,7 +208,7 @@ const sampleResumeData: ResumeData = {
             descriptions: [
                 '基于 UniMERNet 和 Python 构建的公式智能识别软件',
                 'GitHub Star 500+',
-                '支持识别图像中的数学公式并将其转换为可编辑的Latex格式。',
+                '支持识别图像中的数学公式并将其转换为可编辑的Latex格式',
             ],
         },
     ],
