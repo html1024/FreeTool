@@ -81,6 +81,31 @@ interface ResumeData {
 
 const generateId = () => Math.random().toString(36).slice(2, 11);
 
+// localStorage key
+const RESUME_DATA_KEY = 'freetool-resume-data';
+
+// 从 localStorage 加载简历数据
+const loadResumeData = (): ResumeData => {
+    try {
+        const saved = localStorage.getItem(RESUME_DATA_KEY);
+        if (saved) {
+            return JSON.parse(saved);
+        }
+    } catch (e) {
+        console.error('Failed to load resume data:', e);
+    }
+    return defaultResumeData;
+};
+
+// 保存简历数据到 localStorage
+const saveResumeData = (data: ResumeData) => {
+    try {
+        localStorage.setItem(RESUME_DATA_KEY, JSON.stringify(data));
+    } catch (e) {
+        console.error('Failed to save resume data:', e);
+    }
+};
+
 const defaultResumeData: ResumeData = {
     personal: {
         name: '',
@@ -651,7 +676,7 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, themeColor, f
 };
 
 const ResumeGeneratorTool: React.FC = () => {
-    const [resumeData, setResumeData] = useState<ResumeData>(defaultResumeData);
+    const [resumeData, setResumeData] = useState<ResumeData>(loadResumeData);
     const [activeSection, setActiveSection] = useState<SectionType>('personal');
     const [themeColor, setThemeColor] = useState('#0ea5e9');
     const [bodyFontSize, setBodyFontSize] = useState(12);
@@ -662,6 +687,11 @@ const ResumeGeneratorTool: React.FC = () => {
     // A4 尺寸转换为像素 (1pt = 1.333px at 96dpi)
     const A4_WIDTH_PX = A4_WIDTH_PT * 1.333;
     const A4_HEIGHT_PX = A4_HEIGHT_PT * 1.333;
+
+    // 保存简历数据到 localStorage
+    useEffect(() => {
+        saveResumeData(resumeData);
+    }, [resumeData]);
 
     // 计算预览缩放比例，确保宽高都能适应容器
     useEffect(() => {

@@ -161,7 +161,7 @@ const ImageRoundCornerTool: React.FC = () => {
     return (
         <div className="flex w-full flex-col items-center px-4 py-10 sm:px-6 lg:px-8">
             <div className="flex w-full max-w-6xl flex-col items-center gap-2 text-center mb-8">
-                <p className="text-3xl font-black leading-tight tracking-tighter text-gray-900 dark:text-white sm:text-4xl">图片圆角工具</p>
+                <p className="text-3xl font-black leading-tight tracking-tighter text-gray-900 dark:text-white sm:text-4xl">图片圆角处理</p>
                 <p className="text-base font-normal text-gray-500 dark:text-gray-400">快速为您的图片添加圆角效果，支持自定义圆角大小</p>
             </div>
 

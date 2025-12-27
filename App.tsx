@@ -29,6 +29,7 @@ const getAssetUrl = (path: string) => {
 
 // localStorage key
 const PINNED_TOOLS_KEY = 'freetool-pinned-tools';
+const ACTIVE_TOOL_KEY = 'freetool-active-tool';
 
 type ToolType =
     | 'translate'
@@ -157,8 +158,44 @@ const savePinnedTools = (pinnedTools: ToolType[]) => {
     }
 };
 
+// 从 URL hash 或 localStorage 读取活动工具
+const loadActiveTool = (): ToolType => {
+    // 优先从 URL hash 读取
+    const hash = window.location.hash.slice(1);
+    if (hash && TOOLS.some(tool => tool.id === hash)) {
+        return hash as ToolType;
+    }
+    // 其次从 localStorage 读取
+    try {
+        const saved = localStorage.getItem(ACTIVE_TOOL_KEY);
+        if (saved && TOOLS.some(tool => tool.id === saved)) {
+            return saved as ToolType;
+        }
+    } catch (e) {
+        console.error('Failed to load active tool:', e);
+    }
+    return 'translate';
+};
+
+// 保存活动工具
+const saveActiveTool = (toolId: ToolType) => {
+    try {
+        localStorage.setItem(ACTIVE_TOOL_KEY, toolId);
+        // 同时更新 URL hash
+        window.history.replaceState(null, '', `#${toolId}`);
+    } catch (e) {
+        console.error('Failed to save active tool:', e);
+    }
+};
+
 const App: React.FC = () => {
-    const [activeTool, setActiveTool] = useState<ToolType>('translate');
+    const [activeTool, setActiveToolState] = useState<ToolType>(loadActiveTool);
+
+    // 包装 setActiveTool 以同时保存到 localStorage
+    const setActiveTool = useCallback((toolId: ToolType) => {
+        setActiveToolState(toolId);
+        saveActiveTool(toolId);
+    }, []);
     const [showAboutDialog, setShowAboutDialog] = useState(false);
     const [expandedCategories, setExpandedCategories] = useState<CategoryType[]>(['text', 'image', 'data', 'media', 'ai']);
     const [pinnedTools, setPinnedTools] = useState<ToolType[]>(loadPinnedTools);
