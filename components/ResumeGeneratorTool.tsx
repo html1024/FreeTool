@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
     Document,
     Page,
@@ -80,7 +80,7 @@ interface ResumeData {
     projects: Project[];
 }
 
-const generateId = () => Math.random().toString(36).substr(2, 9);
+const generateId = () => Math.random().toString(36).slice(2, 11);
 
 const defaultResumeData: ResumeData = {
     personal: {
@@ -638,8 +638,42 @@ const ResumeGeneratorTool: React.FC = () => {
     const [resumeData, setResumeData] = useState<ResumeData>(defaultResumeData);
     const [activeSection, setActiveSection] = useState<SectionType>('personal');
     const [themeColor, setThemeColor] = useState('#0ea5e9');
-    const [bodyFontSize, setBodyFontSize] = useState(11);
+    const [bodyFontSize, setBodyFontSize] = useState(12);
     const [isExporting, setIsExporting] = useState(false);
+    const [previewScale, setPreviewScale] = useState(0.6);
+    const previewContainerRef = useRef<HTMLDivElement>(null);
+
+    // A4 尺寸转换为像素 (1pt = 1.333px at 96dpi)
+    const A4_WIDTH_PX = A4_WIDTH_PT * 1.333;
+    const A4_HEIGHT_PX = A4_HEIGHT_PT * 1.333;
+
+    // 计算预览缩放比例，确保宽高都能适应容器
+    useEffect(() => {
+        const updateScale = () => {
+            if (previewContainerRef.current) {
+                const containerWidth = previewContainerRef.current.clientWidth - 32;
+                const containerHeight = previewContainerRef.current.clientHeight - 32;
+                const scaleX = containerWidth / A4_WIDTH_PX;
+                const scaleY = containerHeight / A4_HEIGHT_PX;
+                const scale = Math.min(scaleX, scaleY, 1);
+                setPreviewScale(scale);
+            }
+        };
+
+        updateScale();
+        window.addEventListener('resize', updateScale);
+
+        // 使用 ResizeObserver 监听容器尺寸变化
+        const resizeObserver = new ResizeObserver(updateScale);
+        if (previewContainerRef.current) {
+            resizeObserver.observe(previewContainerRef.current);
+        }
+
+        return () => {
+            window.removeEventListener('resize', updateScale);
+            resizeObserver.disconnect();
+        };
+    }, [A4_WIDTH_PX, A4_HEIGHT_PX]);
 
     // 加载示例数据
     const loadSampleData = useCallback(() => {
@@ -1070,18 +1104,23 @@ const ResumeGeneratorTool: React.FC = () => {
                 </div>
 
                 {/* 右侧预览区 */}
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 overflow-hidden">
-                    <div className="bg-white dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 overflow-hidden flex flex-col h-[850px] self-start sticky top-4">
+                    <div className="bg-white dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">实时预览</span>
-                        <span className="text-xs text-gray-500">A4 (595×842pt)</span>
+                        <span className="text-xs text-gray-500">A4 ({Math.round(previewScale * 100)}%)</span>
                     </div>
-                    <div className="p-4 flex justify-center overflow-auto">
+                    <div
+                        ref={previewContainerRef}
+                        className="flex-1 p-4 flex justify-center items-start overflow-hidden"
+                    >
                         <div
-                            className="bg-white shadow-xl flex-shrink-0"
+                            className="bg-white shadow-xl"
                             style={{
                                 width: `${A4_WIDTH_PT}pt`,
                                 height: `${A4_HEIGHT_PT}pt`,
-                                overflow: 'hidden',
+                                transform: `scale(${previewScale})`,
+                                transformOrigin: 'top center',
+                                flexShrink: 0,
                             }}
                         >
                             <ResumePreview
