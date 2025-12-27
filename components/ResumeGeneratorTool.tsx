@@ -99,7 +99,7 @@ const defaultResumeData: ResumeData = {
 // 示例数据
 const sampleResumeData: ResumeData = {
     personal: {
-        name: '我有一计',
+        name: 'zstar',
         title: 'AI全栈工程师',
         phone: '138-0000-0000',
         email: 'zstar1003@163.com',
@@ -137,7 +137,7 @@ const sampleResumeData: ResumeData = {
             startDate: '2021.06',
             endDate: '至今',
             descriptions: [
-                '负责华为云创作者平台的前端架构设计与开发，日活用户超过500万',
+                '负责华为云平台的前端架构设计与开发，日活用户超过500万',
                 '主导前端性能优化项目，页面加载时间减少40%，首屏渲染时间缩短50%',
                 '搭建前端组件库和工程化体系，提升团队开发效率30%',
             ],
@@ -191,6 +191,8 @@ const sampleResumeData: ResumeData = {
         { category: '前端开发', items: 'React, Vue, TypeScript, JavaScript, HTML5, CSS3, Webpack, Vite' },
         { category: '后端技术', items: 'Node.js, Express, MongoDB, MySQL, Redis' },
         { category: '开发工具', items: 'Git, Docker, Jenkins, VS Code, Figma' },
+        { category: 'AI工具', items: 'TensorFlow, PyTorch, OpenAI GPT, Hugging Face, Scikit-learn' },
+        { category: '运营工具', items: 'Google Analytics, SEMrush, HubSpot, Mailchimp, Hootsuite' },
     ],
 };
 
@@ -201,63 +203,63 @@ const createPdfStyles = (themeColor: string, fontSize: number) => StyleSheet.cre
     page: {
         fontFamily: 'NotoSansSC',
         fontSize: fontSize,
-        paddingTop: 40,
-        paddingBottom: 40,
-        paddingLeft: 50,
-        paddingRight: 50,
+        paddingTop: 30,
+        paddingBottom: 30,
+        paddingLeft: 40,
+        paddingRight: 40,
         backgroundColor: '#ffffff',
     },
     header: {
         textAlign: 'center',
-        marginBottom: 12,
+        marginBottom: 8,
     },
     name: {
         fontSize: fontSize + 10,
         fontWeight: 'bold',
         color: '#1a1a1a',
-        marginBottom: 2,
+        marginBottom: 1,
     },
     title: {
         fontSize: fontSize,
         color: '#666666',
-        marginBottom: 6,
+        marginBottom: 4,
     },
     contactRow: {
         flexDirection: 'row',
         justifyContent: 'center',
         flexWrap: 'wrap',
-        gap: 12,
-        marginBottom: 4,
+        gap: 8,
+        marginBottom: 2,
     },
     contactItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 3,
+        gap: 2,
         fontSize: fontSize - 1,
         color: '#555555',
     },
     section: {
-        marginBottom: 10,
+        marginBottom: 6,
     },
     sectionTitle: {
         fontSize: fontSize,
         fontWeight: 'bold',
         color: themeColor,
-        borderBottomWidth: 1.5,
+        borderBottomWidth: 1,
         borderBottomColor: themeColor,
-        paddingBottom: 3,
-        marginBottom: 8,
+        paddingBottom: 1,
+        marginBottom: 4,
         textTransform: 'uppercase',
-        letterSpacing: 1,
+        letterSpacing: 0.5,
     },
     entryContainer: {
-        marginBottom: 8,
+        marginBottom: 4,
     },
     entryHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'baseline',
-        marginBottom: 1,
+        marginBottom: 0,
     },
     entryTitle: {
         fontSize: fontSize - 1,
@@ -271,17 +273,17 @@ const createPdfStyles = (themeColor: string, fontSize: number) => StyleSheet.cre
     entrySubtitle: {
         fontSize: fontSize - 2,
         color: '#666666',
-        marginBottom: 3,
+        marginBottom: 1,
     },
     bulletList: {
-        paddingLeft: 12,
+        paddingLeft: 8,
     },
     bulletItem: {
         flexDirection: 'row',
-        marginBottom: 1,
+        marginBottom: 0,
     },
     bullet: {
-        width: 8,
+        width: 10,
         fontSize: fontSize - 1,
         color: '#666666',
     },
@@ -289,11 +291,11 @@ const createPdfStyles = (themeColor: string, fontSize: number) => StyleSheet.cre
         flex: 1,
         fontSize: fontSize - 1,
         color: '#444444',
-        lineHeight: 1.4,
+        lineHeight: 1.2,
     },
     skillRow: {
         flexDirection: 'row',
-        marginBottom: 4,
+        marginBottom: 2,
     },
     skillCategory: {
         fontWeight: 'bold',
@@ -491,8 +493,8 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, themeColor, f
         fontWeight: 700,
         color: themeColor,
         borderBottom: `1.5pt solid ${themeColor}`,
-        paddingBottom: '3pt',
-        marginBottom: '8pt',
+        paddingBottom: '2pt',
+        marginBottom: '6pt',
         textTransform: 'uppercase',
         letterSpacing: '1pt',
     };
@@ -502,10 +504,10 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, themeColor, f
             style={{
                 fontFamily: '"Noto Sans SC", "Microsoft YaHei", sans-serif',
                 fontSize: `${fontSize}pt`,
-                paddingTop: '40pt',
-                paddingBottom: '40pt',
-                paddingLeft: '50pt',
-                paddingRight: '50pt',
+                paddingTop: '35pt',
+                paddingBottom: '35pt',
+                paddingLeft: '45pt',
+                paddingRight: '45pt',
                 backgroundColor: '#ffffff',
                 color: '#1a1a1a',
                 lineHeight: 1.4,
@@ -514,16 +516,16 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, themeColor, f
             }}
         >
             {/* 头部信息 */}
-            <div style={{ textAlign: 'center', marginBottom: '12pt' }}>
+            <div style={{ textAlign: 'center', marginBottom: '10pt' }}>
                 <div style={{ fontSize: `${fontSize + 10}pt`, fontWeight: 700, color: '#1a1a1a', marginBottom: '2pt' }}>
                     {personal.name || '您的姓名'}
                 </div>
                 {personal.title && (
-                    <div style={{ fontSize: `${fontSize}pt`, color: '#666666', marginBottom: '6pt' }}>
+                    <div style={{ fontSize: `${fontSize}pt`, color: '#666666', marginBottom: '5pt' }}>
                         {personal.title}
                     </div>
                 )}
-                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '12pt', marginBottom: '4pt' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '10pt', marginBottom: '3pt' }}>
                     {personal.phone && (
                         <span style={{ display: 'flex', alignItems: 'center', gap: '3pt', fontSize: `${fontSize - 1}pt`, color: '#555555' }}>
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="#555555"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
@@ -553,21 +555,21 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, themeColor, f
 
             {/* 教育经历 */}
             {education.length > 0 && (
-                <div style={{ marginBottom: '10pt' }}>
+                <div style={{ marginBottom: '8pt' }}>
                     <div style={sectionTitleStyle}>教育经历</div>
                     {education.map((edu) => (
-                        <div key={edu.id} style={{ marginBottom: '8pt' }}>
+                        <div key={edu.id} style={{ marginBottom: '6pt' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1pt' }}>
                                 <span style={{ fontSize: `${fontSize - 1}pt`, fontWeight: 600, color: '#1a1a1a' }}>{edu.school}</span>
                                 <span style={{ fontSize: `${fontSize - 2}pt`, color: '#888888' }}>{edu.startDate} - {edu.endDate}</span>
                             </div>
-                            <div style={{ fontSize: `${fontSize - 2}pt`, color: '#666666', marginBottom: '3pt' }}>
+                            <div style={{ fontSize: `${fontSize - 2}pt`, color: '#666666', marginBottom: '2pt' }}>
                                 {[edu.degree, edu.major, edu.gpa].filter(Boolean).join(' | ')}
                             </div>
                             {edu.descriptions.filter(d => d.trim()).length > 0 && (
-                                <div style={{ paddingLeft: '12pt' }}>
+                                <div style={{ paddingLeft: '10pt' }}>
                                     {edu.descriptions.filter(d => d.trim()).map((desc, i) => (
-                                        <div key={i} style={{ fontSize: `${fontSize - 1}pt`, color: '#444444', lineHeight: 1.4, marginBottom: '1pt', display: 'flex' }}>
+                                        <div key={i} style={{ fontSize: `${fontSize - 1}pt`, color: '#444444', lineHeight: 1.3, marginBottom: '1pt', display: 'flex' }}>
                                             <span style={{ width: '8pt', color: '#666666' }}>•</span>
                                             <span style={{ flex: 1 }}>{desc}</span>
                                         </div>
@@ -581,21 +583,21 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, themeColor, f
 
             {/* 工作经验 */}
             {experience.length > 0 && (
-                <div style={{ marginBottom: '10pt' }}>
+                <div style={{ marginBottom: '8pt' }}>
                     <div style={sectionTitleStyle}>工作经验</div>
                     {experience.map((exp) => (
-                        <div key={exp.id} style={{ marginBottom: '8pt' }}>
+                        <div key={exp.id} style={{ marginBottom: '6pt' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1pt' }}>
                                 <span style={{ fontSize: `${fontSize - 1}pt`, fontWeight: 600, color: '#1a1a1a' }}>{exp.company}</span>
                                 <span style={{ fontSize: `${fontSize - 2}pt`, color: '#888888' }}>{exp.startDate} - {exp.endDate}</span>
                             </div>
-                            <div style={{ fontSize: `${fontSize - 2}pt`, color: '#666666', marginBottom: '3pt' }}>
+                            <div style={{ fontSize: `${fontSize - 2}pt`, color: '#666666', marginBottom: '2pt' }}>
                                 {[exp.position, exp.location].filter(Boolean).join(' | ')}
                             </div>
                             {exp.descriptions.filter(d => d.trim()).length > 0 && (
-                                <div style={{ paddingLeft: '12pt' }}>
+                                <div style={{ paddingLeft: '10pt' }}>
                                     {exp.descriptions.filter(d => d.trim()).map((desc, i) => (
-                                        <div key={i} style={{ fontSize: `${fontSize - 1}pt`, color: '#444444', lineHeight: 1.4, marginBottom: '1pt', display: 'flex' }}>
+                                        <div key={i} style={{ fontSize: `${fontSize - 1}pt`, color: '#444444', lineHeight: 1.3, marginBottom: '1pt', display: 'flex' }}>
                                             <span style={{ width: '8pt', color: '#666666' }}>•</span>
                                             <span style={{ flex: 1 }}>{desc}</span>
                                         </div>
@@ -609,18 +611,18 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, themeColor, f
 
             {/* 项目经历 */}
             {projects.length > 0 && (
-                <div style={{ marginBottom: '10pt' }}>
+                <div style={{ marginBottom: '8pt' }}>
                     <div style={sectionTitleStyle}>项目经历</div>
                     {projects.map((proj) => (
-                        <div key={proj.id} style={{ marginBottom: '8pt' }}>
+                        <div key={proj.id} style={{ marginBottom: '6pt' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1pt' }}>
                                 <span style={{ fontSize: `${fontSize - 1}pt`, fontWeight: 600, color: '#1a1a1a' }}>{proj.name}</span>
                                 <span style={{ fontSize: `${fontSize - 2}pt`, color: '#888888' }}>{proj.date}</span>
                             </div>
                             {proj.descriptions.filter(d => d.trim()).length > 0 && (
-                                <div style={{ paddingLeft: '12pt' }}>
+                                <div style={{ paddingLeft: '10pt' }}>
                                     {proj.descriptions.filter(d => d.trim()).map((desc, i) => (
-                                        <div key={i} style={{ fontSize: `${fontSize - 1}pt`, color: '#444444', lineHeight: 1.4, marginBottom: '1pt', display: 'flex' }}>
+                                        <div key={i} style={{ fontSize: `${fontSize - 1}pt`, color: '#444444', lineHeight: 1.3, marginBottom: '1pt', display: 'flex' }}>
                                             <span style={{ width: '8pt', color: '#666666' }}>•</span>
                                             <span style={{ flex: 1 }}>{desc}</span>
                                         </div>
@@ -634,10 +636,10 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, themeColor, f
 
             {/* 专业技能 */}
             {skills.length > 0 && (
-                <div style={{ marginBottom: '10pt' }}>
+                <div style={{ marginBottom: '8pt' }}>
                     <div style={sectionTitleStyle}>专业技能</div>
                     {skills.map((skill, idx) => (
-                        <div key={idx} style={{ display: 'flex', marginBottom: '4pt', fontSize: `${fontSize - 1}pt` }}>
+                        <div key={idx} style={{ display: 'flex', marginBottom: '3pt', fontSize: `${fontSize - 1}pt` }}>
                             <span style={{ fontWeight: 600, color: '#1a1a1a' }}>{skill.category}：</span>
                             <span style={{ color: '#444444', flex: 1 }}>{skill.items}</span>
                         </div>
