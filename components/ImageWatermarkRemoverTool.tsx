@@ -24,6 +24,7 @@ const ImageWatermarkRemoverTool: React.FC = () => {
     const [brushSize, setBrushSize] = useState<number>(30);
     const [lines, setLines] = useState<Line[]>([]);
     const [isDrawing, setIsDrawing] = useState<boolean>(false);
+    const [cursorPos, setCursorPos] = useState<Point | null>(null); // 鼠标位置，用于显示画笔预览
     const [resultUrl, setResultUrl] = useState<string>('');
     const [showResult, setShowResult] = useState<boolean>(false);
     const [modelCached, setModelCached] = useState<boolean>(false);
@@ -118,7 +119,16 @@ const ImageWatermarkRemoverTool: React.FC = () => {
             }
             ctx.stroke();
         });
-    }, [image, lines]);
+
+        // 绘制画笔光标预览
+        if (cursorPos && !isDrawing) {
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.arc(cursorPos.x, cursorPos.y, brushSize / 2, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    }, [image, lines, cursorPos, brushSize, isDrawing]);
 
     // 获取画布坐标
     const getCanvasCoords = useCallback((e: React.MouseEvent | React.TouchEvent): Point | null => {
@@ -153,12 +163,15 @@ const ImageWatermarkRemoverTool: React.FC = () => {
         setLines(prev => [...prev, { points: [point], brushSize }]);
     }, [getCanvasCoords, brushSize]);
 
-    // 绘制中
+    // 绘制中 / 更新光标位置
     const handleMouseMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-        if (!isDrawing) return;
-
         const point = getCanvasCoords(e);
         if (!point) return;
+
+        // 始终更新光标位置以显示预览
+        setCursorPos(point);
+
+        if (!isDrawing) return;
 
         setLines(prev => {
             const newLines = [...prev];
@@ -173,6 +186,12 @@ const ImageWatermarkRemoverTool: React.FC = () => {
     // 结束绘制
     const handleMouseUp = useCallback(() => {
         setIsDrawing(false);
+    }, []);
+
+    // 鼠标离开画布
+    const handleMouseLeave = useCallback(() => {
+        setIsDrawing(false);
+        setCursorPos(null);
     }, []);
 
     // 撤销
@@ -357,7 +376,7 @@ const ImageWatermarkRemoverTool: React.FC = () => {
         <div className="flex w-full flex-col items-center px-4 py-10 sm:px-6 lg:px-8">
             <div className="flex w-full max-w-6xl flex-col items-center gap-2 text-center mb-8">
                 <p className="text-3xl font-black leading-tight tracking-tighter text-gray-900 dark:text-white sm:text-4xl">
-                    图片去水印
+                    图片水印去除
                 </p>
                 <p className="text-base font-normal text-gray-500 dark:text-gray-400">
                     使用 AI 智能移除图片中的水印、文字等不需要的内容
@@ -430,12 +449,12 @@ const ImageWatermarkRemoverTool: React.FC = () => {
                                     ) : (
                                         <canvas
                                             ref={canvasRef}
-                                            className="max-w-full max-h-[500px] object-contain cursor-crosshair"
+                                            className="max-w-full max-h-[500px] object-contain cursor-none"
                                             style={{ touchAction: 'none' }}
                                             onMouseDown={handleMouseDown}
                                             onMouseMove={handleMouseMove}
                                             onMouseUp={handleMouseUp}
-                                            onMouseLeave={handleMouseUp}
+                                            onMouseLeave={handleMouseLeave}
                                             onTouchStart={handleMouseDown}
                                             onTouchMove={handleMouseMove}
                                             onTouchEnd={handleMouseUp}
