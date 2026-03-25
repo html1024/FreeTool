@@ -243,11 +243,13 @@ const createPdfStyles = (themeColor: string, fontSize: number) => StyleSheet.cre
         fontWeight: 'bold',
         color: '#1a1a1a',
         marginBottom: 1,
+        wordBreak: 'break-all',
     },
     title: {
         fontSize: fontSize,
         color: '#666666',
         marginBottom: 4,
+        wordBreak: 'break-all',
     },
     contactRow: {
         flexDirection: 'row',
@@ -262,6 +264,7 @@ const createPdfStyles = (themeColor: string, fontSize: number) => StyleSheet.cre
         gap: 2,
         fontSize: fontSize - 1,
         color: '#555555',
+        wordBreak: 'break-all',
     },
     section: {
         marginBottom: 6,
@@ -290,6 +293,7 @@ const createPdfStyles = (themeColor: string, fontSize: number) => StyleSheet.cre
         fontSize: fontSize - 1,
         fontWeight: 'bold',
         color: '#1a1a1a',
+        wordBreak: 'break-all',
     },
     entryDate: {
         fontSize: fontSize - 2,
@@ -299,6 +303,7 @@ const createPdfStyles = (themeColor: string, fontSize: number) => StyleSheet.cre
         fontSize: fontSize - 2,
         color: '#666666',
         marginBottom: 1,
+        wordBreak: 'break-all',
     },
     bulletList: {
         paddingLeft: 8,
@@ -317,6 +322,7 @@ const createPdfStyles = (themeColor: string, fontSize: number) => StyleSheet.cre
         fontSize: fontSize - 1,
         color: '#444444',
         lineHeight: 1.2,
+        wordBreak: 'break-all',
     },
     skillRow: {
         flexDirection: 'row',
@@ -331,6 +337,7 @@ const createPdfStyles = (themeColor: string, fontSize: number) => StyleSheet.cre
         color: '#444444',
         fontSize: fontSize - 1,
         flex: 1,
+        wordBreak: 'break-all',
     },
 });
 
