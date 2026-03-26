@@ -29,10 +29,9 @@ Font.register({
 const A4_WIDTH_PT = 595;
 const A4_HEIGHT_PT = 842;
 
-const WrapText: React.FC<{ children: string; style?: any }> = ({ children, style }) => {
-    if (!children) return null;
-    const wrapped = children.replace(/(.{20})/g, '$1\u200B');
-    return <Text style={style}>{wrapped}</Text>;
+const wrapText = (text: string): string => {
+    if (!text) return '';
+    return text.replace(/(.{1})/g, '$1\u200B');
 };
 
 // 简历数据类型
@@ -239,7 +238,6 @@ const createPdfStyles = (themeColor: string, fontSize: number) => StyleSheet.cre
     header: {
         textAlign: 'center',
         marginBottom: 8,
-        display: 'flex',
     },
     name: {
         fontSize: fontSize + 10,
@@ -258,7 +256,6 @@ const createPdfStyles = (themeColor: string, fontSize: number) => StyleSheet.cre
         flexWrap: 'wrap',
         gap: 8,
         marginBottom: 2,
-        display: 'flex',
     },
     contactItem: {
         flexDirection: 'row',
@@ -266,8 +263,6 @@ const createPdfStyles = (themeColor: string, fontSize: number) => StyleSheet.cre
         gap: 2,
         fontSize: fontSize - 1,
         color: '#555555',
-        wordBreak: 'break-all',
-        flexWrap: 'wrap',
     },
     section: {
         marginBottom: 6,
@@ -285,22 +280,17 @@ const createPdfStyles = (themeColor: string, fontSize: number) => StyleSheet.cre
     },
     entryContainer: {
         marginBottom: 4,
-        display: 'flex',
     },
     entryHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'baseline',
         marginBottom: 0,
-        display: 'flex',
-        flexWrap: 'wrap',
     },
     entryTitle: {
         fontSize: fontSize - 1,
         fontWeight: 'bold',
         color: '#1a1a1a',
-        wordBreak: 'break-all',
-        flex: 1,
     },
     entryDate: {
         fontSize: fontSize - 2,
@@ -310,8 +300,6 @@ const createPdfStyles = (themeColor: string, fontSize: number) => StyleSheet.cre
         fontSize: fontSize - 2,
         color: '#666666',
         marginBottom: 1,
-        wordBreak: 'break-all',
-        flex: 1,
     },
     bulletList: {
         paddingLeft: 8,
@@ -319,7 +307,6 @@ const createPdfStyles = (themeColor: string, fontSize: number) => StyleSheet.cre
     bulletItem: {
         flexDirection: 'row',
         marginBottom: 0,
-        display: 'flex',
     },
     bullet: {
         width: 10,
@@ -328,7 +315,6 @@ const createPdfStyles = (themeColor: string, fontSize: number) => StyleSheet.cre
     },
     bulletText: {
         flex: 1,
-        width: '100%',
         fontSize: fontSize - 1,
         color: '#444444',
     },
@@ -438,7 +424,7 @@ const ResumePDFDocument: React.FC<ResumePDFProps> = ({ resumeData, themeColor, f
                                         {edu.descriptions.filter(d => d.trim()).map((desc, i) => (
                                             <View key={i} style={styles.bulletItem}>
                                                 <Text style={styles.bullet}>•</Text>
-                                                <WrapText style={styles.bulletText}>{desc}</WrapText>
+                                                <Text style={styles.bulletText}>{wrapText(desc)}</Text>
                                             </View>
                                         ))}
                                     </View>
@@ -466,7 +452,7 @@ const ResumePDFDocument: React.FC<ResumePDFProps> = ({ resumeData, themeColor, f
                                         {exp.descriptions.filter(d => d.trim()).map((desc, i) => (
                                             <View key={i} style={styles.bulletItem}>
                                                 <Text style={styles.bullet}>•</Text>
-                                                <WrapText style={styles.bulletText}>{desc}</WrapText>
+                                                <Text style={styles.bulletText}>{wrapText(desc)}</Text>
                                             </View>
                                         ))}
                                     </View>
@@ -491,7 +477,7 @@ const ResumePDFDocument: React.FC<ResumePDFProps> = ({ resumeData, themeColor, f
                                         {proj.descriptions.filter(d => d.trim()).map((desc, i) => (
                                             <View key={i} style={styles.bulletItem}>
                                                 <Text style={styles.bullet}>•</Text>
-                                                <WrapText style={styles.bulletText}>{desc}</WrapText>
+                                                <Text style={styles.bulletText}>{wrapText(desc)}</Text>
                                             </View>
                                         ))}
                                     </View>
