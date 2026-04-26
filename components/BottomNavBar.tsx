@@ -4,6 +4,7 @@ import ThemeToggle from './ThemeToggle';
 type ToolType =
     | 'translate'
     | 'image-converter'
+    | 'ai-image-detection'
     | 'image-editor'
     | 'image-comparison'
     | 'image-round-corner'
@@ -58,6 +59,11 @@ const TOOLS: Tool[] = [
         id: 'image-converter',
         name: '图片',
         icon: 'image',
+    },
+    {
+        id: 'ai-image-detection',
+        name: 'AI检测',
+        icon: 'policy',
     },
     {
         id: 'image-editor',
